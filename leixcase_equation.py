@@ -13,21 +13,26 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
+
 #parameters
 max_loops = 10000
 dim = [15] #length of genomes
-G = [1000, 500, 100] #number of generations
-S = [100] #population size 
-n_iters = 3
-damp = [3]
-#MU = [0.1]
-MU = [0.01, 0.05, 0.1, 0.3, 0.5, 0.7]
+G = [700] #number of generations
+S = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000] #population size 
+n_iters = 30 #number of iterations
+damp = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5] 
+MU = [0.025]
+#MU = [0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75]
 p_thresh = 0.5
-from numpy.random import rand
+
+param1 = S #heatmap parameter1
+param2 = damp #heatmap parameter 2
 
 def fitness_function(x, damp):
-    #Genotype is a vector of 5 integers between 0 and 5.
+    #Gets a genotype and returns its phenotype.
+    #Genotype is a vector of 5 integers between 0 and 4.
     #Phenotype is a vector where each number in the original vector has all of the other numbers subtracted from it.
+    #Damp is a tuning parameter that changes the intesity of contradiction between objectives. 
     #Fitness is the highest value in the phenotype.
     x_copy = np.copy(x)
     s = sum(x_copy)
@@ -75,6 +80,7 @@ for g in G:
             for dd in damp:
                 for mu in MU:
                     print("mu = ", mu, "G = ", g, "S = ", ss, 'damp = ', dd, 'dim = ', d)
+                    #time.sleep(3)
                     n_loops = []
                     opt_tracker = []
                     zeros = []
@@ -109,20 +115,26 @@ for g in G:
                             for p in range(len(new_pop)):
                                 if (P_survival[p] >= p_thresh):
                                     survivors.append(new_pop[p])
-                                        
+                            
+                            if (survivors == []):
+                                print(" No survivors at iteration ", it, "at loop ", counter, "for mu = ", mu, "G = ", g, "S = ", ss)
+                                for p in range(len(new_pop)):
+                                    if (P_survival[p] >= np.mean(prob)):
+                                        survivors.append(new_pop[p])            
+                            
                             for s in survivors:
                                 if (four_counter(s) == 1 and np.sum(s) == 4):
                                     opt_counter = opt_counter + 1
                                     #print("Optimum found at mu: ", mu, "iter: ", it, "loop: ", counter)
-                                if (four_counter(s) >= 2):
+                                #if (four_counter(s) >= 2):
+                                if(opt_counter > 0):
                                     terminate = True
                                             
-                            if (survivors == []):
-                                print(" No survivors at iteration ", it, "at loop ", counter, "for mu = ", mu, "G = ", g, "S = ", ss)
-                            
                             #print ("#survivors = ", len(survivors))
                             #print("survivors = ", survivors)
+                            #time.sleep(0.001)
                             #print("prob = ", prob)
+                            #print("P_survival= ", P_survival)
                             #time.sleep(0.05)
                             initial_pop = survivors    
                             counter = counter + 1
@@ -135,9 +147,10 @@ for g in G:
                         n_loops.append(counter)
                         opt_tracker.append(opt_counter)
                         print("n_loops = ", n_loops)
+                        #print("n_optimums = ", opt_tracker)
 
                     p_fail = (sum(1 for i in n_loops if i < max_loops))/n_iters
-                    N_loops.append(np.average(n_loops))
+                    N_loops = np.average(n_loops)
                     print('N_loops = ', N_loops, 'p_fail = ', p_fail)
                     opt.append(np.average(opt_tracker))
                     new_row = {'G': g, 'S':ss, 'dim':d, 'damp':dd, 'MU': mu, 'mean_fail_loop':np.mean(n_loops), 'p_fail':p_fail}
@@ -153,8 +166,9 @@ for g in G:
 
 
 df.to_csv("out.csv", index=False)
-df = df.pivot('G', 'MU', 'p_fail')
+df = df.pivot('dim', 'S', 'p_fail')
 plt.figure("heat map of parameters")
+plt.title("probabilty of failure")
 ax = sns.heatmap(df, cmap = 'coolwarm')
 ax.invert_yaxis()
 plt.savefig("heatmap.png")
