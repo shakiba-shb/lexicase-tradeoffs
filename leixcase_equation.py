@@ -16,28 +16,23 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 #parameters
 max_loops = 10000
-dim = [15] #length of genomes
+dim = [25] #length of genomes
 G = [700] #number of generations
-S = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000] #population size 
+S = [100] #population size 
 n_iters = 30 #number of iterations
-damp = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5] 
+damp = [1] 
 MU = [0.025]
 #MU = [0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75]
 p_thresh = 0.5
 
-param1 = S #heatmap parameter1
-param2 = damp #heatmap parameter 2
-
 def fitness_function(x, damp):
-    #Gets a genotype and returns its phenotype.
-    #Genotype is a vector of 5 integers between 0 and 4.
+    #Genotype is a vector of 5 integers between 0 and 5.
     #Phenotype is a vector where each number in the original vector has all of the other numbers subtracted from it.
-    #Damp is a tuning parameter that changes the intesity of contradiction between objectives. 
     #Fitness is the highest value in the phenotype.
-    x_copy = np.copy(x)
+    x_copy = list(np.copy(x))
     s = sum(x_copy)
     for i in range(len(x_copy)):
-        x_copy[i] = x_copy[i] - s/damp + x_copy[i]
+        x_copy[i] = x_copy[i] - s/damp + x_copy[i]/damp
     return x_copy
 
 def mutants(pop, mu, m):
@@ -95,7 +90,7 @@ for g in G:
                         while (counter < max_loops):
                             #print("Loop" , counter, "iter", it, "mu", mu, flush = True)
 
-                            muts = mutants(initial_pop, mu, 2)
+                            muts = mutants(initial_pop, mu, 1)
                             new_pop = initial_pop + muts
                             for i in range(len(new_pop)):
                                 new_pop[i] = tuple(new_pop[i])
@@ -149,7 +144,7 @@ for g in G:
                         print("n_loops = ", n_loops)
                         #print("n_optimums = ", opt_tracker)
 
-                    p_fail = (sum(1 for i in n_loops if i < max_loops))/n_iters
+                    p_fail = 1 - ((sum(1 for i in n_loops if i < max_loops))/n_iters)
                     N_loops = np.average(n_loops)
                     print('N_loops = ', N_loops, 'p_fail = ', p_fail)
                     opt.append(np.average(opt_tracker))
@@ -166,7 +161,7 @@ for g in G:
 
 
 df.to_csv("out.csv", index=False)
-df = df.pivot('dim', 'S', 'p_fail')
+df = df.pivot('S', 'G', 'p_fail')
 plt.figure("heat map of parameters")
 plt.title("probabilty of failure")
 ax = sns.heatmap(df, cmap = 'coolwarm')
