@@ -16,17 +16,17 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 #parameters
 max_loops = 10000
-dim = [25] #length of genomes
-G = [700] #number of generations
-S = [100] #population size 
-n_iters = 30 #number of iterations
+dim = [50] #length of genomes
+G = [1000] #number of generations
+S = [500] #population size 
+n_iters = 1 #number of iterations
 damp = [1] 
-MU = [0.025]
-#MU = [0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75]
+#MU = [0.01]
+MU = [0.1]
 p_thresh = 0.5
 
 def fitness_function(x, damp):
-    #Genotype is a vector of 5 integers between 0 and 5.
+    #Genotype is a vector of 5 integers between 0 and 4.
     #Phenotype is a vector where each number in the original vector has all of the other numbers subtracted from it.
     #Fitness is the highest value in the phenotype.
     x_copy = list(np.copy(x))
@@ -75,7 +75,7 @@ for g in G:
             for dd in damp:
                 for mu in MU:
                     print("mu = ", mu, "G = ", g, "S = ", ss, 'damp = ', dd, 'dim = ', d)
-                    #time.sleep(3)
+                    time.sleep(3)
                     n_loops = []
                     opt_tracker = []
                     zeros = []
@@ -87,9 +87,11 @@ for g in G:
                         counter = 0 # indicates termination of while loop
                         opt_counter = 0
                         prob = []
+                        all_zeros = 0
+
                         while (counter < max_loops):
                             #print("Loop" , counter, "iter", it, "mu", mu, flush = True)
-
+                            
                             muts = mutants(initial_pop, mu, 1)
                             new_pop = initial_pop + muts
                             for i in range(len(new_pop)):
@@ -104,7 +106,7 @@ for g in G:
                             prob = example.LexicaseFitness(phenotypes)
                                 #df = {"mu": mu,"iter": it, "loop": counter, "genome":temp[p].geno, "time":tac-tic, "prob":prob[p]}
 
-                            P_survival = (np.ones(len(prob)) - (np.ones(len(prob)) - prob)**ss)**g
+                            P_survival = list((np.ones(len(prob)) - (np.ones(len(prob)) - prob)**ss)**g)
 
                             survivors = []
                             for p in range(len(new_pop)):
@@ -118,15 +120,24 @@ for g in G:
                                         survivors.append(new_pop[p])            
                             
                             for s in survivors:
-                                if (four_counter(s) == 1 and np.sum(s) == 4):
-                                    opt_counter = opt_counter + 1
+                                #if (four_counter(s) == 1 and np.sum(s) == 4):
+                                    #opt_counter = opt_counter + 1
                                     #print("Optimum found at mu: ", mu, "iter: ", it, "loop: ", counter)
-                                #if (four_counter(s) >= 2):
-                                if(opt_counter > 0):
+                                    #if(opt_counter > 0):
+                                        #Terminate = True
+                                                
+                                if (four_counter(s) >= 2):
+                                    print("found 2 fours")
+                                    time.sleep(3)
                                     terminate = True
+
+                                if (counter == max_loops - 2):
+                                    if((len(survivors) == 1) and (not np.any(s))):
+                                        terminate = True
+
                                             
                             #print ("#survivors = ", len(survivors))
-                            #print("survivors = ", survivors)
+                            print("survivors = ", survivors)
                             #time.sleep(0.001)
                             #print("prob = ", prob)
                             #print("P_survival= ", P_survival)
@@ -139,13 +150,14 @@ for g in G:
 
                             #print("loop ", counter, "time = ", tac0 - tic0 )  
                 
+
                         n_loops.append(counter)
                         opt_tracker.append(opt_counter)
                         print("n_loops = ", n_loops)
                         #print("n_optimums = ", opt_tracker)
 
-                    p_fail = 1 - ((sum(1 for i in n_loops if i < max_loops))/n_iters)
-                    N_loops = np.average(n_loops)
+                    p_fail = (sum(1 for i in n_loops if i < max_loops))/n_iters
+                    N_loops.append(np.average(n_loops))
                     print('N_loops = ', N_loops, 'p_fail = ', p_fail)
                     opt.append(np.average(opt_tracker))
                     new_row = {'G': g, 'S':ss, 'dim':d, 'damp':dd, 'MU': mu, 'mean_fail_loop':np.mean(n_loops), 'p_fail':p_fail}
@@ -161,24 +173,24 @@ for g in G:
 
 
 df.to_csv("out.csv", index=False)
-df = df.pivot('S', 'G', 'p_fail')
-plt.figure("heat map of parameters")
-plt.title("probabilty of failure")
-ax = sns.heatmap(df, cmap = 'coolwarm')
-ax.invert_yaxis()
-plt.savefig("heatmap.png")
+#df = df.pivot('S', 'G', 'p_fail')
+#plt.figure("heat map of parameters")
+#plt.title("probabilty of failure")
+#ax = sns.heatmap(df, cmap = 'coolwarm')
+#ax.invert_yaxis()
+#plt.savefig("heatmap.png")
 
 # print("N_loops = ", N_loops)
 # #print("opt = ", opt)
-# error = [error_min, error_max]
+error = [error_min, error_max]
 # #print("error = ", error)
-# plt.figure("number of loops to fail")
-# plt.plot(MU, N_loops)
-# #plt.errorbar(MU, N_loops, yerr = np.multiply(0.7, std), fmt = 'o', c = 'red', capsize = 10)
-# N_loops = np.array(N_loops)
-# error = np.array(error)
-# plt.errorbar(MU, N_loops, yerr = np.abs(N_loops - error) , fmt = 'o', c = 'red', capsize = 10)
-# plt.title("number of loops to fail")
-# plt.xlabel("mutation rate")
-# plt.ylabel("number of loops")  
-# plt.savefig("mutation rate vs number of loops.png")
+plt.figure("number of loops to fail")
+plt.plot(MU, N_loops)
+#plt.errorbar(MU, N_loops, yerr = np.multiply(0.7, std), fmt = 'o', c = 'red', capsize = 10)
+N_loops = np.array(N_loops)
+error = np.array(error)
+plt.errorbar(MU, N_loops, yerr = np.abs(N_loops - error) , fmt = 'o', c = 'red', capsize = 5)
+plt.title("number of loops to fail")
+plt.xlabel("mutation rate")
+plt.ylabel("number of loops")  
+plt.savefig("mutation rate vs number of loops.png")
