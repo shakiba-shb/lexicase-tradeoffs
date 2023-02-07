@@ -1,0 +1,107 @@
+random_seed = 0;                // Seed for random number generator; use 0 to base on time.
+Var pop_size = 100;
+Var num_gens = 50000;
+Var num_vals = 5;
+Var print_step = 100;           // Interval for printing...
+
+Population main_pop;
+Population next_pop;
+
+ValsOrg vals_org {              // Organism consisting of a series of floating-point values.
+  N = num_vals;                 // Number of values in organism
+  mut_prob = 0.007;             // Probability of each value mutating on reproduction.
+  mut_size = 5.0;               // Standard deviation on size of mutations.
+  min_value = 0;                // Lower limit for value fields.
+  max_value = 100;              // Upper limit for value fields.
+  lower_bound = "clamp";        // How should the lower limit be enforced?
+                                // - "no_limit": Allow values to be arbitrarily low.
+                                // - "clamp": Reduce too-low values to min_value.
+                                // - "wrap": Make low values loop around to maximum.
+                                // - "rebound": Make low values 'bounce' back up.
+  upper_bound = "clamp";      // How should the upper limit be enforced?
+                                // - "no_limit": Allow values to be arbitrarily high.
+                                // - "clamp": Reduce too-high values to max_value.
+                                // - "wrap": Make high values loop around to minimum.
+                                // - "rebound": Make high values 'bounce' back down.
+  genome_name = "vals";         // Name of variable to contain set of values.
+  total_name = "total";         // Name of variable to contain total of all values.
+  init_random = 0;
+};
+
+EvalAntagonistic diagnostics {    // Evaluate set of values with a specified diagnostic problem.
+  vals_trait = "vals";          // Which trait stores the values to evaluate?
+  scores_trait = "scores";      // Which trait should we store revised scores in?
+  N = num_vals;                 // How many values are we working with?
+  total_trait = "fitness";      // Which trait should we store the total score in?
+  dampening = 2;
+};
+
+SelectLexicase select_l {       // Shuffle traits each time an organism is chose for replication.
+  fitness_traits = "scores";    // Which traits provide the fitness values to use?
+  epsilon = 2;                // Range from max value to be preserved? (fraction of max)
+  sample_traits = 0;            // How many traits should be sampled each generation? (0 = off)
+};
+
+DataFile fit_file { filename="fitness.csv"; };
+fit_file.ADD_COLUMN( "Average Fitness", "main_pop.CALC_MEAN('fitness')" );
+fit_file.ADD_COLUMN( "Maximum Fitness", "main_pop.CALC_MAX('fitness')" );
+fit_file.ADD_COLUMN( "Dominant Fitness", "main_pop.CALC_MODE('fitness')" );
+fit_file.ADD_COLUMN( "Dominant Genome", "main_pop.CALC_MODE('vals')" );
+
+OrgList best_org;
+DataFile max_file { filename="max_org.csv"; };
+max_file.ADD_SETUP( "best_org = main_pop.FIND_MAX('fitness')" );
+max_file.ADD_COLUMN( "Fitness", "best_org.TRAIT('fitness')" );
+max_file.ADD_COLUMN( "Genome", "best_org.TRAIT('vals')");
+max_file.ADD_COLUMN( "Scores", "best_org.TRAIT('scores')" );
+//max_file.ADD_
+
+@START() {
+  PRINT("Beginning DIAGNOSTICS!\nMain config options:");
+  PRINT(" Num org values:   ", vals_org.N);
+  PRINT(" Num score values:   ", diagnostics.N);
+  PRINT(" Mut Probability:  ", vals_org.mut_prob);
+  PRINT(" Mut Size:         ", vals_org.mut_size);
+  PRINT(" Population size:  ", pop_size);
+  PRINT(" Random seed:      ", random_seed, "\n");
+  PRINT(" Num Generations:  ", num_gens, "\n");
+  PRINT(" Epsilon:  ", select_l.epsilon, "\n");
+  PRINT(" Dampening:  ", diagnostics.dampening, "\n");
+
+  main_pop.INJECT("vals_org", pop_size);       // Inject starting population.
+  PRINT(main_pop.TRAIT("vals"));
+}
+
+// Actions to perform every update.
+
+@UPDATE(Var ud) {
+  IF (ud == num_gens) EXIT();
+
+  diagnostics.EVAL(main_pop);
+
+  IF (ud % print_step == 0) {
+     PRINT("UD:", GET_UPDATE(),
+           "  MainPopSize=", main_pop.SIZE(),
+           "  AveFitness=", main_pop.CALC_MEAN("fitness"),
+           "  MaxFitness=", main_pop.CALC_MAX("fitness"),
+           // main_pop.TRAIT("scores"),
+           main_pop.CALC_MODE("vals"),
+           // main_pop.CALC_MODE("scores"),           
+     );
+     fit_file.WRITE();
+     max_file.WRITE();
+  }
+
+  IF (ud == num_gens){
+    Var idx = 0;
+    WHILE(idx < main_pop.NUM_ORGS()){
+      OrgList tmp_list = main_pop.INDEX(idx);
+      PRINT("[", idx, "] ", tmp_list.TRAIT("vals"), " ", tmp_list.TRAIT("fitness"));
+      idx = idx + 1;
+    }
+    EXIT();
+  }
+
+  select_l.SELECT(main_pop, next_pop, pop_size);
+  main_pop.REPLACE_WITH(next_pop);
+}
