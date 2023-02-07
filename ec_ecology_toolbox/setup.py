@@ -21,7 +21,7 @@ ext_modules = [
         ["tests/test_interaction_networks.cc"],
         # Example: passing in the version to the compiled code
         define_macros = [('VERSION_INFO', __version__)],
-        include_dirs = ['../Empirical/include/emp']
+        include_dirs = ['../../EmpiricalSafe/include/emp']
         ),
 ]
 
