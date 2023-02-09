@@ -53,4 +53,4 @@ cd ${SLURM_ARRAY_TASK_ID}
 cp /mnt/scratch/dolsonem/MABE2/build/MABE .
 cp /mnt/scratch/dolsonem/lexicase-tradeoffs/config/AntagonisticInt.mabe .
 
-./MABE -f AntagonisticInt.mabe -s random_seed=${SLURM_ARRAY_TASK_ID} -s pop_size=500 -s select_l.epsilon=0 -s diagnostics.dampening=1 -s vals_org.N=75 -s diagnostics.N=75 -s vals_org.mut_size=0 -s vals_org.mut_prob=0.0001 -s G=500 -s vals_org.max_value=4 > run.log
+./MABE -f AntagonisticInt.mabe -s random_seed=${SLURM_ARRAY_TASK_ID} -s pop_size=500 -s select_l.epsilon=0 -s diagnostics.dampening=1 -s vals_org.N=75 -s diagnostics.N=75 -s vals_org.mut_size=0 -s vals_org.mut_prob=0.01 -s G=500 -s vals_org.max_value=4 > run.log
