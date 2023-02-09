@@ -91,7 +91,7 @@ def main():
                 for p in new_pop:
                     phenotypes.append(list(fitness_function(p, damp)))
 
-                prob = example.LexicaseFitness(phenotypes)
+                prob = example.LexicaseFitness(phenotypes, .1)
                     #df = {"mu": mu,"iter": it, "loop": counter, "genome":temp[p].geno, "time":tac-tic, "prob":prob[p]}
 
                 P_survival = (np.ones(len(prob)) - (np.ones(len(prob)) - prob)**S)**G

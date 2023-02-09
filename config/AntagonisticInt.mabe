@@ -3,6 +3,7 @@ Var pop_size = 100;
 Var num_gens = 50000;
 Var num_vals = 5;
 Var print_step = 100;           // Interval for printing...
+Var G = 500;
 
 Population main_pop;
 Population next_pop;
@@ -84,13 +85,24 @@ max_file.ADD_COLUMN( "Scores", "best_org.TRAIT('scores')" );
            "  MainPopSize=", main_pop.SIZE(),
            "  AveFitness=", main_pop.CALC_MEAN("fitness"),
            "  MaxFitness=", main_pop.CALC_MAX("fitness"),
+           "  MinFitness=", main_pop.CALC_MIN("fitness"),
            // main_pop.TRAIT("scores"),
-           main_pop.CALC_MODE("vals"),
+           main_pop.TRAIT("vals"),
            // main_pop.CALC_MODE("scores"),           
      );
      fit_file.WRITE();
      max_file.WRITE();
+
   }
+  IF (ud % 5000 == 0) {
+    Var idx = 0;
+    WHILE(idx < main_pop.NUM_ORGS()){
+      OrgList tmp_list = main_pop.INDEX(idx);
+      PRINT("[", idx, "] ", tmp_list.TRAIT("vals"), " ", tmp_list.TRAIT("fitness"));
+      idx = idx + 1;
+    }
+  }
+   
 
   IF (ud == num_gens){
     Var idx = 0;
@@ -102,6 +114,11 @@ max_file.ADD_COLUMN( "Scores", "best_org.TRAIT('scores')" );
     EXIT();
   }
 
-  select_l.SELECT(main_pop, next_pop, pop_size);
+  IF (ud % G == 0) {
+    select_l.SELECT(main_pop, next_pop, pop_size);
+  } ELSE {
+    select_l.SELECT_NO_MUTS(main_pop, next_pop, pop_size);    
+  }
+
   main_pop.REPLACE_WITH(next_pop);
 }

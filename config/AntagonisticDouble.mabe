@@ -3,6 +3,7 @@ Var pop_size = 100;
 Var num_gens = 50000;
 Var num_vals = 5;
 Var print_step = 100;           // Interval for printing...
+Var G = 500;
 
 Population main_pop;
 Population next_pop;
@@ -102,6 +103,11 @@ max_file.ADD_COLUMN( "Scores", "best_org.TRAIT('scores')" );
     EXIT();
   }
 
-  select_l.SELECT(main_pop, next_pop, pop_size);
+  IF (ud % G == 0) {
+    select_l.SELECT(main_pop, next_pop, pop_size);
+  } ELSE {
+    select_l.SELECT_NO_MUTS(main_pop, next_pop, pop_size);    
+  }
+
   main_pop.REPLACE_WITH(next_pop);
 }
