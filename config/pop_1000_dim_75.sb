@@ -25,7 +25,7 @@
 ## do make sure to use different ranges of numbers for each condition.
 ## This specific command will launch 10 jobs, with array indices
 ## 990, 991, 992, 993, 994, 995, 996, 997, 998, and 999.
-#SBATCH --array=155-165
+#SBATCH --array=421-450
 
 
 ## We're running this on scratch because that's what ICER prefers

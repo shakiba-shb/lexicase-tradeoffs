@@ -25,7 +25,7 @@
 ## do make sure to use different ranges of numbers for each condition.
 ## This specific command will launch 10 jobs, with array indices
 ## 990, 991, 992, 993, 994, 995, 996, 997, 998, and 999.
-#SBATCH --array=181-210
+#SBATCH --array=756-786
 
 
 ## We're running this on scratch because that's what ICER prefers
@@ -36,8 +36,8 @@ cd /mnt/scratch/dolsonem/lexicase-tradeoffs/data
 ## Make a directory for this condition
 ## (this line will throw an error once the directory exists, but
 ## that's harmless)
-mkdir pop_500_dim_125
-cd pop_500_dim_125
+mkdir epsilon_2_type_Double
+cd epsilon_2_type_Double
 
 ## Make a directory for this random seed
 mkdir ${SLURM_ARRAY_TASK_ID}
@@ -51,6 +51,6 @@ cd ${SLURM_ARRAY_TASK_ID}
 ## copy of it that you always reference.
 ## Really, though, what are the odds you're never going to change it?
 cp /mnt/scratch/dolsonem/MABE2/build/MABE .
-cp /mnt/scratch/dolsonem/lexicase-tradeoffs/config/AntagonisticInt.mabe .
+cp /mnt/scratch/dolsonem/lexicase-tradeoffs/config/AntagonisticDouble.mabe .
 
-./MABE -f AntagonisticInt.mabe -s random_seed=${SLURM_ARRAY_TASK_ID} -s pop_size=500 -s select_l.epsilon=0 -s diagnostics.dampening=1 -s vals_org.N=125 -s diagnostics.N=125 -s vals_org.mut_size=0 -s vals_org.mut_prob=0.01 > run.log
+./MABE -f AntagonisticDouble.mabe -s random_seed=${SLURM_ARRAY_TASK_ID} -s pop_size=100 -s select_l.epsilon=2 -s diagnostics.dampening=1 -s vals_org.N=5 -s diagnostics.N=5 -s vals_org.mut_size=3 -s vals_org.mut_prob=0.01 > run.log
