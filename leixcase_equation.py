@@ -3,8 +3,8 @@ import numpy as np
 import random
 from random import choices
 from numpy.random import rand
-import matplotlib.pyplot as plt
 import time
+import matplotlib.pyplot as plt
 import scipy.stats as st
 from scipy.stats import bootstrap
 import pandas as pd
@@ -13,20 +13,19 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
-
 #parameters
 max_loops = 10000
-dim = [50] #length of genomes
-G = [1000] #number of generations
+dim = [5] #dimension of genomes
+G = [500] #number of generations
 S = [500] #population size 
-n_iters = 1 #number of iterations
-damp = [1] 
-#MU = [0.01]
-MU = [0.1]
-p_thresh = 0.5
+n_iters = 30 #number of iterations
+damp = [1] #dampening factor
+MU = [0.002] #mutation rate
+p_thresh = 0.5 #Threshold probability of survival of a genome
 
 def fitness_function(x, damp):
-    #Genotype is a vector of 5 integers between 0 and 4.
+    #Function used for building phenotypes based on genotypes.
+    #Genotype is a vector of dim integers between 0 and 4.
     #Phenotype is a vector where each number in the original vector has all of the other numbers subtracted from it.
     #Fitness is the highest value in the phenotype.
     x_copy = list(np.copy(x))
@@ -36,7 +35,7 @@ def fitness_function(x, damp):
     return x_copy
 
 def mutants(pop, mu, m):
-    # Gets a population and returns all its m mutants with mutation rate mu.
+    #Gets a population and returns all its m mutants with mutation rate mu.
     new_pop = []
     for p in pop:
         p_copy = p.copy()
@@ -55,7 +54,7 @@ def mutants(pop, mu, m):
     return new_pop
 
 def four_counter(x):
-    # Counts number of 4s in genome
+    #Counts number of 4s in genome (4 is the maximum value a genome can take)
     counter = 0
     for i in x:
         if (i == 4):
@@ -67,7 +66,6 @@ error_min = []
 error_max = []
 opt = []
 df = pd.DataFrame(columns = ['G', 'S', 'dim', 'damp', 'MU', 'mean_fail_loop', 'p_fail'])
-#df.columns = ['mu = 0.01', 'mu = 0.05', 'mu = 0.1', 'mu = 0.3', 'mu = 0.5', 'mu = 0.7' ]\
 
 for g in G:
     for ss in S:
@@ -76,121 +74,103 @@ for g in G:
                 for mu in MU:
                     print("mu = ", mu, "G = ", g, "S = ", ss, 'damp = ', dd, 'dim = ', d)
                     time.sleep(3)
-                    n_loops = []
-                    opt_tracker = []
-                    zeros = []
+                    n_loops = [] #keeps number of loops until termination in each iteration
+                    opt_tracker = [] #keeps track of number of optimums found
+
                     for it in range(n_iters):  
                         #print("it = ", it)
                         terminate = False
-                        #initial_pop = [[random.randint(1,3) for i in range(dim)]]
-                        initial_pop = [[0 for i in range (d)]]
-                        counter = 0 # indicates termination of while loop
+                        initial_pop = [[0 for i in range (d)]] #initial population
+                        counter = 0 #indicates termination of while loop
                         opt_counter = 0
-                        prob = []
-                        all_zeros = 0
-
+                        prob = [] #keeps probabilities of genomes
+                        
                         while (counter < max_loops):
-                            #print("Loop" , counter, "iter", it, "mu", mu, flush = True)
                             
-                            muts = mutants(initial_pop, mu, 1)
-                            new_pop = initial_pop + muts
-                            for i in range(len(new_pop)):
+                            muts = mutants(initial_pop, mu, 1) #create mutants of current genotypes
+                            new_pop = initial_pop + muts #add mutants to population
+                            for i in range(len(new_pop)): #remove similar genotypes
                                 new_pop[i] = tuple(new_pop[i])
                             new_pop = set(new_pop)   
                             new_pop = [list(ele) for ele in new_pop]
 
-                            phenotypes = []
-                            for p in new_pop:
+                            phenotypes = [] 
+                            for p in new_pop: #create phenotypes from genotypes based on defines fitness function
                                 phenotypes.append(list(fitness_function(p, dd)))
 
-                            prob = example.LexicaseFitness(phenotypes)
-                                #df = {"mu": mu,"iter": it, "loop": counter, "genome":temp[p].geno, "time":tac-tic, "prob":prob[p]}
-
-                            P_survival = list((np.ones(len(prob)) - (np.ones(len(prob)) - prob)**ss)**g)
+                            prob = example.LexicaseFitness(phenotypes) #calculate probablity of being selected by lexicase selection
+                            P_survival = list((np.ones(len(prob)) - (np.ones(len(prob)) - prob)**ss)**g) #probability of survival based on equation(3)
 
                             survivors = []
-                            for p in range(len(new_pop)):
+                            for p in range(len(new_pop)): #find survivors based on probability of survival
                                 if (P_survival[p] >= p_thresh):
                                     survivors.append(new_pop[p])
                             
-                            if (survivors == []):
+                            if (survivors == []): #define what happens if no individual survives
                                 print(" No survivors at iteration ", it, "at loop ", counter, "for mu = ", mu, "G = ", g, "S = ", ss)
                                 for p in range(len(new_pop)):
                                     if (P_survival[p] >= np.mean(prob)):
                                         survivors.append(new_pop[p])            
                             
                             for s in survivors:
-                                #if (four_counter(s) == 1 and np.sum(s) == 4):
-                                    #opt_counter = opt_counter + 1
-                                    #print("Optimum found at mu: ", mu, "iter: ", it, "loop: ", counter)
-                                    #if(opt_counter > 0):
-                                        #Terminate = True
-                                                
-                                if (four_counter(s) >= 2):
-                                    print("found 2 fours")
-                                    time.sleep(3)
+                                #Look for optimums in the population 
+                                if (four_counter(s) == 1 and np.sum(s) == 4):
+                                    print("Optimum found at loop", counter)
                                     terminate = True
+                                                
+                                #if (four_counter(s) >= 2):
+                                    #print("found 2 fours at loop ", counter)
+                                    #terminate = True
 
-                                if (counter == max_loops - 2):
+                                #Look for local optima where population gets stuck
+                                if (counter == max_loops - 1):
                                     if((len(survivors) == 1) and (not np.any(s))):
+                                        print("stuck at all zeros")
                                         terminate = True
-
-                                            
-                            #print ("#survivors = ", len(survivors))
-                            print("survivors = ", survivors)
-                            #time.sleep(0.001)
-                            #print("prob = ", prob)
-                            #print("P_survival= ", P_survival)
-                            #time.sleep(0.05)
-                            initial_pop = survivors    
-                            counter = counter + 1
                             
+                            #print("survivors = ", survivors)
+                            #time.sleep(0.01)
+
                             if (terminate == True):
-                                break    
+                                break
 
-                            #print("loop ", counter, "time = ", tac0 - tic0 )  
+                            initial_pop = survivors #set current survivers as initial population of the next loop   
+                            counter = counter + 1
                 
-
                         n_loops.append(counter)
                         opt_tracker.append(opt_counter)
-                        print("n_loops = ", n_loops)
-                        #print("n_optimums = ", opt_tracker)
+                        print("iter = ", it, "n_loops = ", n_loops[it])
 
-                    p_fail = (sum(1 for i in n_loops if i < max_loops))/n_iters
+                    p_fail = 1 - ((sum(1 for i in n_loops if i < max_loops - 1))/n_iters) #probability of failure
                     N_loops.append(np.average(n_loops))
-                    print('N_loops = ', N_loops, 'p_fail = ', p_fail)
-                    opt.append(np.average(opt_tracker))
-                    new_row = {'G': g, 'S':ss, 'dim':d, 'damp':dd, 'MU': mu, 'mean_fail_loop':np.mean(n_loops), 'p_fail':p_fail}
+                    #opt.append(np.average(opt_tracker))
+                    print('p_fail = ', p_fail)
+                    new_row = {'G': g, 'S':ss, 'dim':d, 'damp':dd, 'MU': (mu*d)/10, 'mean_fail_loop':np.mean(n_loops), 'p_fail':p_fail}
                     df = df.append(new_row, ignore_index = True)
-                    #new_row = [g, ss, d, dd, mu, np.mean(n_loops), p_fail]
-                    #df = pd.concat([df, new_row], ignore_index= True)
 
                     data = (n_loops,)    
                     bootstrap_ci = bootstrap(data, np.mean, confidence_level=0.95, random_state=1, method='percentile')
                     error_min.append(bootstrap_ci.confidence_interval[0])
                     error_max.append(bootstrap_ci.confidence_interval[1])
-                    #std.append(np.std(n_loops))
 
 
 df.to_csv("out.csv", index=False)
-#df = df.pivot('S', 'G', 'p_fail')
-#plt.figure("heat map of parameters")
-#plt.title("probabilty of failure")
-#ax = sns.heatmap(df, cmap = 'coolwarm')
-#ax.invert_yaxis()
-#plt.savefig("heatmap.png")
 
-# print("N_loops = ", N_loops)
-# #print("opt = ", opt)
-error = [error_min, error_max]
-# #print("error = ", error)
-plt.figure("number of loops to fail")
-plt.plot(MU, N_loops)
-#plt.errorbar(MU, N_loops, yerr = np.multiply(0.7, std), fmt = 'o', c = 'red', capsize = 10)
-N_loops = np.array(N_loops)
-error = np.array(error)
-plt.errorbar(MU, N_loops, yerr = np.abs(N_loops - error) , fmt = 'o', c = 'red', capsize = 5)
-plt.title("number of loops to fail")
-plt.xlabel("mutation rate")
-plt.ylabel("number of loops")  
-plt.savefig("mutation rate vs number of loops.png")
+##Use following code to create heatmaps of any 2 parameters:
+# df = df.pivot('param1', 'param2', 'p_fail')
+# plt.figure("heat map of parameters")
+# plt.title("probabilty of failure")
+# ax = sns.heatmap(df, cmap = 'coolwarm')
+# ax.invert_yaxis()
+# plt.savefig("heatmap.png")
+
+##Use following code to plot number of loops to fail for each mutation rate:
+#error = [error_min, error_max]
+#plt.figure("number of loops to fail")
+#N_loops = np.array(N_loops)
+#error = np.array(error)
+##plt.errorbar(MU, N_loops, yerr = np.abs(N_loops - error) , fmt = 'o', c = 'red', capsize = 5)
+#plt.title("number of loops to fail")
+#plt.xlabel("mutation rate")
+#plt.ylabel("number of loops")  
+#plt.savefig("mutation rate vs number of loops.png")
