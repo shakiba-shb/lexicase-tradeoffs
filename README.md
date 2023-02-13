@@ -3,10 +3,10 @@ This repository contains code and supplimental material for "Theoretical Limits 
 
 
   **Contents:**
-  - [Abstract](https://github.com/shakiba-shb/lexicase_tradeoffs#abstract)
-  - [Authors](https://github.com/shakiba-shb/lexicase_tradeoffs#authors)
-  - [Dependencies](https://github.com/shakiba-shb/lexicase_tradeoffs#dependencies)
-  - [Compilation](https://github.com/shakiba-shb/lexicase_tradeoffs#compilation)
+  - [Abstract](https://github.com/shakiba-shb/lexicase-tradeoffs#abstract)
+  - [Authors](https://github.com/shakiba-shb/lexicase-tradeoffs#authors)
+  - [Dependencies](https://github.com/shakiba-shb/lexicase-tradeoffs#dependencies)
+  - [Compilation](https://github.com/shakiba-shb/lexicase-tradeoffs#compilation)
 
   
 ## Abstract
