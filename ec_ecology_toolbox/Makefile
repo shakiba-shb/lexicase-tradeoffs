@@ -1,6 +1,6 @@
 # Project-specific settings
 PROJECT := evo_comp_ecology
-EMP_DIR := ../../EmpiricalSafe/include/emp
+EMP_DIR := ../Empirical/include/emp
 PYBIND_DIR := $(shell python3 -m pybind11 --includes)
 
 INCLUDE := $(shell python3 -m pybind11 --includes)

@@ -5,11 +5,6 @@ Summary: A test project using pybind11
 Home-page: https://github.com/pybind/python_example
 Author: Sylvain Corlay
 Author-email: sylvain.corlay@gmail.com
-License: UNKNOWN
-Platform: UNKNOWN
 Requires-Python: >=3.7
 Provides-Extra: test
 License-File: LICENSE
-
-UNKNOWN
-
