@@ -17,10 +17,10 @@ Lexicase selection is a state of the art parent selection technique for problems
 - [Emily Dolson](http://emilyldolson.com/)
 
 ## Compilation
-The results of this project are reported in 2 parts: math results and experimental results.
+The results of this project are reported in 2 parts: stochastic modelling results and experimental results.
 
-### Math results:
-To simulate our math results, you can use the "lexicase_tradeoffs.py" file. You must install the python library pybind11 to make sure you can use functions adopted from C++ code. For more information about pybind11 installation and use click <a href="https://pybind11.readthedocs.io/en/stable/installing.html"> here.</a> 
+### Stochastic modelling results:
+To simulate stochastic modelling results, you can use the "lexicase_tradeoffs.py" file. You must install the python library pybind11 to make sure you can use functions adopted from C++. For more information about pybind11 installation and use click <a href="https://pybind11.readthedocs.io/en/stable/installing.html"> here.</a> 
 
 ```{bash, shell_installation}
 
@@ -39,9 +39,8 @@ python lexicase_tradeoffs.py
 We used the Modular Agent Based Evolver (MABE) software framework for our experimental results. Specifically we used MABE version 2.0 which provides the ability to construct diverse computational evolution scenarios. For more information on how to use MABE 2.0 click <a href="https://mabe2.readthedocs.io/en/latest"> here.</a>
 
 ## Results:
-- Whether lexicase selection succeeds or fails in solving a multi-objective optimization problem depends on the ratio of genotype dimension and the population size. If these values do not satisfy the inequality in Equation (5), leixcase selection fails to find any optima. 
-- Our $\epsilon$-lexicase selection results suggest that higher values of $\epsilon$ reduce lexicase selection's ability to find Pareto-optimal solutions, even when the population size is large relative to dimension. Moreover, this effect is much more dramatic when the genome is composed of floating point values than when it is composed of integers.
-- Increasing the value of $\epsilon$ further impedes $\epsilon$-lexicase selection's ability to find Pareto-optimal solutions.
+- Whether lexicase selection succeeds or fails in solving a multi-objective optimization problem with antagonistic contradictory objectives depends on the ratio of genotype dimension and the population size. If these values do not satisfy the inequality in Equation (5), leixcase selection fails to find any optima. Outside this region of parameter space, lexicase selection performs well on such problems. 
+- Results of experiments with $\epsilon$-lexicase selection suggest that higher values of $\epsilon$ reduce lexicase selection's ability to find Pareto-optimal solutions, even when the population size is large relative to dimension. Moreover, this effect is much more dramatic when the genome is composed of floating point values than when it is composed of integers. Increasing the value of $\epsilon$ further impedes $\epsilon$-lexicase selection's ability to find Pareto-optimal solutions.
 
 
 
