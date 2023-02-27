@@ -36,7 +36,7 @@ python lexicase_tradeoffs.py
 
 ```
 ### Experimental results:
-We used the Modular Agent Based Evolver (MABE) software framework for our experimental results. Specifically we used MABE version 2.0 which provides the ability to construct diverse computational evolution scenarios. For more information on how to use MABE 2.0 click <a href="https://mabe2.readthedocs.io/en/latest"> here.</a>
+We used the Modular Agent Based Evolver (MABE) software framework for our experimental results. Specifically we used MABE version 2.0 which provides the ability to construct diverse computational evolution scenarios. For more information on how to use MABE 2.0 click <a href="[https://mabe2.readthedocs.io/en/latest](https://github.com/shakiba-shb/MABE2/tree/308e82ba326cbc65e5898c765bf5b2d77cce0a95)"> here.</a>
 
 ## Results:
 - Whether lexicase selection succeeds or fails in solving a multi-objective optimization problem with antagonistic contradictory objectives depends on the ratio of genotype dimension and the population size. If these values do not satisfy the inequality in Equation (5), leixcase selection fails to find any optima. Outside this region of parameter space, lexicase selection performs well on such problems. 
