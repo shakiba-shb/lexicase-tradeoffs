@@ -1,10 +1,10 @@
 # Project-specific settings
 PROJECT := evo_comp_ecology
 EMP_DIR := ../Empirical/include/emp
-PYBIND_DIR := /home/shakiba/lexicase_equation/env/lib/python3.8/site-packages/pybind11/include
+PYBIND_DIR := /home/shakiba/lexicase-tradeoffs/env/lib/python3.8/site-packages/pybind11/include
 
 # Flags to use regardless of compiler
-CFLAGS_all := -Wall -shared -std=c++1z -fPIC -Wno-unused-function -I$(EMP_DIR)/ -I$(PYBIND_DIR)/ -I/usr/include/python3.8/ -o my_module$(shell python3-config --extension-suffix)
+CFLAGS_all := -Wall -shared -std=c++1z -fPIC -Wno-unused-function -I$(EMP_DIR)/ -I$(PYBIND_DIR)/ -I/usr/include/python3.8/ -o lexicase$(shell python3-config --extension-suffix)
 
 # Native compiler information
 CXX := clang++

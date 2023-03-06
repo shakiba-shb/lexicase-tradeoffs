@@ -1,4 +1,4 @@
-import my_module
+import lexicase
 import numpy as np
 import random
 from random import choices
@@ -98,7 +98,7 @@ for g in G:
                             for p in new_pop: #create phenotypes from genotypes based on defines fitness function
                                 phenotypes.append(list(fitness_function(p, dd)))
 
-                            prob = my_module.LexicaseFitness(phenotypes) #calculate probablity of being selected by lexicase selection
+                            prob = lexicase.LexicaseFitness(phenotypes) #calculate probablity of being selected by lexicase selection
                             P_survival = list((np.ones(len(prob)) - (np.ones(len(prob)) - prob)**ss)**g) #probability of survival based on equation(3)
 
                             survivors = []
