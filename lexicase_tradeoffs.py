@@ -1,4 +1,5 @@
-import lexicase
+#import lexicase
+import ec_ecology_toolbox as eco
 import numpy as np
 import random
 from random import choices
@@ -16,11 +17,11 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 #parameters
 max_loops = 10000
 dim = [5] #dimension of genomes
-G = [500] #number of generations
-S = [500] #population size 
+G = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000] #number of generations
+S = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000] #population size 
 n_iters = 30 #number of iterations
 damp = [1] #dampening factor
-MU = [0.002] #mutation rate
+MU = [0.001] #mutation rate
 p_thresh = 0.5 #Threshold probability of survival of a genome
 
 def fitness_function(x, damp):
@@ -35,7 +36,7 @@ def fitness_function(x, damp):
     return x_copy
 
 def mutants(pop, mu, m):
-    #Gets a population and returns all its m mutants with mutation rate mu.
+    #Gets a population and returns all its m-mutants with mutation rate mu.
     new_pop = []
     for p in pop:
         p_copy = p.copy()
@@ -98,7 +99,8 @@ for g in G:
                             for p in new_pop: #create phenotypes from genotypes based on defines fitness function
                                 phenotypes.append(list(fitness_function(p, dd)))
 
-                            prob = lexicase.LexicaseFitness(phenotypes) #calculate probablity of being selected by lexicase selection
+                            #prob = lexicase.LexicaseFitness(phenotypes) #calculate probablity of being selected by lexicase selection
+                            prob = eco.LexicaseFitness(phenotypes) #calculate probablity of being selected by lexicase selection
                             P_survival = list((np.ones(len(prob)) - (np.ones(len(prob)) - prob)**ss)**g) #probability of survival based on equation(3)
 
                             survivors = []
@@ -146,7 +148,8 @@ for g in G:
                     #opt.append(np.average(opt_tracker))
                     print('p_fail = ', p_fail)
                     new_row = {'G': g, 'S':ss, 'dim':d, 'damp':dd, 'MU': (mu*d)/10, 'mean_fail_loop':np.mean(n_loops), 'p_fail':p_fail}
-                    df = df.append(new_row, ignore_index = True)
+                    #df = df.append(new_row, ignore_index = True)
+                    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
 
                     data = (n_loops,)    
                     bootstrap_ci = bootstrap(data, np.mean, confidence_level=0.95, random_state=1, method='percentile')
@@ -154,7 +157,7 @@ for g in G:
                     error_max.append(bootstrap_ci.confidence_interval[1])
 
 
-df.to_csv("out.csv", index=False)
+df.to_csv("out1.csv", index=False)
 
 ##Use following code to create heatmaps of any 2 parameters:
 # df = df.pivot('param1', 'param2', 'p_fail')
