@@ -1,8 +1,6 @@
 import ec_ecology_toolbox as eco
 import numpy as np
 import random
-from random import choices
-from numpy.random import rand
 import time
 import matplotlib.pyplot as plt
 import scipy.stats as st
@@ -25,8 +23,9 @@ def fitness_function(x, damp):
     Returns:
     - y (list): phenotype
     """
-    y = [x_i - sum(x_j/damp for x_j in x if x_j != x_i) for x_i in x]
-    return y
+    x = np.array(x)
+    s = np.sum(x)
+    return x - s / damp + x / damp
 
 def mutants(pop, mu, m, per_genome = True):
     """
@@ -46,38 +45,34 @@ def mutants(pop, mu, m, per_genome = True):
         
         if per_genome:
             # Per-genome mutation
-            while mutations_count < m:
+            for _ in range(m):
+                gene_index = random.randint(0, len(indv) - 1)
                 if random.random() < mu:
-                    gene_index = random.randint(0, len(indv) - 1)
                     if gene_index not in mutated_indices:
                         indv[gene_index] += random.choice([-1, 1])
                         indv[gene_index] = max(0, min(indv[gene_index], 4))
-                        mutations_count += 1
                         mutated_indices.add(gene_index)
         else:
             # Per-site mutation
             order = random.sample(list(np.arange(0, len(indv))), len(indv))
-            while mutations_count < m:
+            for _ in range(m):
                 for gene_index in order:
-                    if random.random() < mu:
+                    if (random.random()) < mu and (gene_index not in mutated_indices):
                         indv[gene_index] += random.choice([-1, 1])
                         indv[gene_index] = max(0, min(indv[gene_index], 4))
-                        mutations_count += 1
+                        mutated_indices.add(gene_index)
                         break
 
         new_pop.append(indv)
     return new_pop
 
-def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = None, rdir = ""):
+def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = None, epsilon = None, max_loops = None , p_thresh = None, rdir = "" ):
 
     runid = uuid.uuid4() 
-    print("G = ", G, "S = ", S, "Dim = ", Dim, 'Damp = ', Damp, 'MU = ', MU, 'Seed = ', Seed)
-
+    print("G = ", G, "S = ", S, "Dim = ", Dim, 'Damp = ', Damp, 'MU = ', MU, 'Seed = ', Seed, 'max_loops =', max_loops, 'epsilon =', epsilon)
     terminate = False
     initial_pop = [[0 for i in range (Dim)]] #initial population
     counter = 0 #indicates termination of while loop
-    max_loops = 1000
-    p_thresh = 0.5
     prob = [] #keeps probabilities of genomes
 
     while (counter < max_loops):
@@ -93,7 +88,7 @@ def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = N
         for genome in new_pop: #create phenotypes from genotypes based on defined fitness function
             phenotypes.append(list(fitness_function(genome, Damp)))
 
-        prob = eco.LexicaseFitness(phenotypes) #calculate probablity of being selected by lexicase selection for all phenotypes
+        prob = eco.LexicaseFitness(phenotypes, epsilon) #calculate probablity of being selected by lexicase selection for all phenotypes
         P_survival = list((np.ones(len(prob)) - (np.ones(len(prob)) - prob)**S)**G) #calculate probability of survival based on equation(?) for all phenotypes
         
         survivors = []
@@ -102,7 +97,7 @@ def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = N
                 survivors.append(new_pop[pheno])
         
         if (survivors == []): #define what happens if no individual survives, look at average probabilities instead of p_thresh
-            print(" No survivors at seed ", Seed, "loop ", counter, "for mu = ", MU, "G = ", G, "S = ", S)
+            print(" No survivors at seed ", Seed, "loop ", counter, "for mu = ", MU, "G = ", G, "S = ", S, "Dim = ", Dim)
             for pheno in range(len(new_pop)): 
                 if (P_survival[pheno] >= np.mean(P_survival)):
                     survivors.append(new_pop[pheno])
@@ -110,7 +105,7 @@ def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = N
         for s in survivors:
         #Look for optimums in the population 
             if (s.count(4) == 1 and np.sum(s) == 4):
-                print("Optimum found at loop", counter)
+                #print("Optimum found at loop", counter)
                 terminate = True
 
             if (counter == max_loops - 1): #Check if we're stuck at all-zeros
