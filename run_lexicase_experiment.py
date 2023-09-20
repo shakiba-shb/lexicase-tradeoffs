@@ -66,6 +66,23 @@ def mutants(pop, mu, m, per_genome = True):
         new_pop.append(indv)
     return new_pop
 
+def all_populations_identical(population_dict):
+    # Check if there are no generations in the dictionary
+    if not population_dict:
+        print("pop_history empty")
+        return False
+
+    # Get the first generation's population
+    first_generation_population = population_dict.get(min(population_dict.keys()))
+
+    # Compare all other generations' populations to the first generation
+    for generation, population in population_dict.items():
+        if population != first_generation_population:
+            return False  # Populations are not identical
+
+    # If all populations are identical
+    return True
+
 def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = None, epsilon = None, max_loops = None , p_thresh = None ):
 
     runid = uuid.uuid4()
@@ -73,7 +90,10 @@ def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = N
     terminate = False
     initial_pop = [[0 for i in range (Dim)]] #initial population
     counter = 0 #indicates termination of while loop
+    fail_reason = ''
+    last_pop = []
     prob = [] #keeps probabilities of genomes
+    pop_history = dict()
 
     while (counter < max_loops):
 
@@ -108,19 +128,29 @@ def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = N
                 #print("Optimum found at loop", counter)
                 terminate = True
 
-            if (counter == max_loops - 1): #Check if we're stuck at all-zeros
-                if((len(survivors) == 1) and (not np.any(s))):
-                    print("stuck at all zeros")
-                    terminate = True
+        # if (counter == max_loops - 1): #Check if we're stuck at all-zeros
+        #     if((len(survivors) == 1) and (not np.any(survivors[0]))):
+        #         print("stuck at all zeros")
+        #         terminate = True
 
+        if (counter > max_loops - 1000):
+            pop_history[counter] = survivors
+        
         if (terminate == True):
             break
 
         initial_pop = survivors #set current survivers as initial population of the next loop   
         counter = counter + 1
     #print("survivors:", survivors)
-    print("seed = ", seed, "n_loops = ", counter)
-    new_row = {'G': G, 'S':S, 'Dim':Dim, 'Damp':Damp, 'MU': MU, 'Seed': int(Seed), 'max_loops': max_loops, 'epsilon': epsilon, 'fail_loop':counter}
+    if (counter == max_loops):
+        print("History checking...")
+        if all_populations_identical(pop_history):
+            fail_reason = 'stuck'
+        else:
+            fail_reason = 'searching'
+        last_pop = list(pop_history.values())[-1]
+
+    new_row = {'G': G, 'S':S, 'Dim':Dim, 'Damp':Damp, 'MU': MU, 'Seed': int(Seed), 'max_loops': max_loops, 'epsilon': epsilon, 'fail_loop':counter, 'fail_reason': fail_reason, 'last_pop': last_pop}
     
     filename = rdir + f'/runid-{runid}.json'
     
@@ -156,14 +186,14 @@ args=[]
 
 G = [500]
 S = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
-Dim = [5, 10, 15, 25, 50, 75]
+Dim = [5, 15, 25, 50]
 Damp = [1]
 MU = [0.01]
 seeds = np.random.randint(1,2**15,n_iters) 
-max_loops = [100000]
+max_loops = [10000]
 p_thresh = [0.5]
-epsilon = [2]
-results=pd.DataFrame(columns = ['G', 'S', 'Dim', 'Damp', 'MU', 'Seed', 'max_loops', 'epsilon' 'fail_loop'])
+epsilon = [0]
+results=pd.DataFrame(columns = ['G', 'S', 'Dim', 'Damp', 'MU', 'Seed', 'max_loops', 'epsilon' 'fail_loop', 'fail_reason', 'last_pop'])
 
 # construct a list of arguments
 for g,s,dim,damp,mu,seed,epsilon,max_loops,p_thresh in it.product(G,S,Dim,Damp,MU,seeds,epsilon,max_loops,p_thresh):
