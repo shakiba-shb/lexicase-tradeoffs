@@ -65,7 +65,7 @@ def my_custom_user_func(pop):
         adj.update(adjacent_nodes(list(gene)))
 
     for gene in adj:
-        node = Set_Node(pop)
+        node = deepcopy(pop)
         #node = deepcopy(pop)
         #node = [list(i) for i in node]
         members = [list(i) for i in node.members]
@@ -88,16 +88,16 @@ def my_custom_user_func(pop):
             x = int(1/(1 - (1 - t**(1/G))**(1/S)))
             all_combinations = list(combinations(members, x))
             for c in all_combinations:
-                new_node = frozenset(tuple(i) for i in c)
-                if new_node != node.members:
+                new_node = Set_Node([tuple(i) for i in c])
+                if new_node != node:
                     if new_node in result:
                         result[new_node] += mu/(len(adj)*len(all_combinations))
                     else:
                         result[new_node] = mu/(len(adj)*len(all_combinations))
                         #result[tuple(tuple(i) for i in all_combinations)] = (mu/(len(adj)*len(all_combinations)))
         else:           
-            new_node = frozenset(tuple(i) for i in survivors)
-            if new_node != node.members:
+            new_node = Set_Node([tuple(i) for i in survivors])
+            if new_node != node:
                 if new_node in result:
                     result[new_node] += mu/len(adj)
                 else:
@@ -118,7 +118,7 @@ t = 0.5
 mu = 0.1
 epsilon = 0
 max_graph_size = 5
-last_pop = Set_Node(tuple(i) for i in last_pop)
+last_pop = Set_Node([tuple(i) for i in last_pop])
 #print(my_custom_user_func(last_pop))
 
 
