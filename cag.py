@@ -28,7 +28,7 @@ def fitness_function(x, damp):
 def contains_optimum(cag):
     opt = False
     for n in cag.keys():
-        for i in n:
+        for i in n.members:
             i = list(i)
             if (i.count(4) == 1 and np.sum(i) == 4):
                 opt = True
@@ -61,7 +61,7 @@ def adjacent_nodes(n):
 def my_custom_user_func(pop):
     result = dict()
     adj = set()
-    for gene in pop:
+    for gene in pop.members:
         adj.update(adjacent_nodes(list(gene)))
 
     for gene in adj:
@@ -104,9 +104,9 @@ def my_custom_user_func(pop):
                     result[new_node] = mu/len(adj)
             
     if len(result) == 0:
-        node.is_sink = True
+        pop.is_sink = True
     else:
-        node.is_sink = False
+        pop.is_sink = False
     return result
 
 
@@ -118,7 +118,7 @@ t = 0.5
 mu = 0.1
 epsilon = 0
 max_graph_size = 5
-last_pop = frozenset(tuple(i) for i in last_pop)
+last_pop = Set_Node(tuple(i) for i in last_pop)
 #print(my_custom_user_func(last_pop))
 
 
