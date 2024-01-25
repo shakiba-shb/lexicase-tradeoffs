@@ -1,4 +1,4 @@
-import ec_ecology_toolbox as eco
+from ec_ecology_toolbox import selection_probabilities as eco
 import numpy as np
 import random
 import time
@@ -11,6 +11,8 @@ import uuid
 import json
 import sys
 import os
+import math
+import csv
 
 def fitness_function(x, damp):
     """
@@ -41,29 +43,29 @@ def mutants(pop, mu, m, per_genome = True):
     for indv in pop:
         mutations_count = 0  # Track the number of mutations
         mutated_indices = set()  # Track the indices that have been mutated
-        indv = indv.copy()
+        indv_copy = indv.copy()
         
         if per_genome:
             # Per-genome mutation
             for _ in range(m):
-                gene_index = random.randint(0, len(indv) - 1)
+                gene_index = random.randint(0, len(indv_copy) - 1)
                 if random.random() < mu:
                     if gene_index not in mutated_indices:
-                        indv[gene_index] += random.choice([-1, 1])
-                        indv[gene_index] = max(0, min(indv[gene_index], 4))
+                        indv_copy[gene_index] += random.choice([-1, 1])
+                        indv_copy[gene_index] = max(0, min(indv_copy[gene_index], 4))
                         mutated_indices.add(gene_index)
         else:
             # Per-site mutation
-            order = random.sample(list(np.arange(0, len(indv))), len(indv))
+            order = random.sample(list(np.arange(0, len(indv_copy))), len(indv_copy))
             for _ in range(m):
                 for gene_index in order:
                     if (random.random()) < mu and (gene_index not in mutated_indices):
-                        indv[gene_index] += random.choice([-1, 1])
-                        indv[gene_index] = max(0, min(indv[gene_index], 4))
+                        indv_copy[gene_index] += random.choice([-1, 1])
+                        indv_copy[gene_index] = max(0, min(indv_copy[gene_index], 4))
                         mutated_indices.add(gene_index)
                         break
 
-        new_pop.append(indv)
+        new_pop.append(indv_copy)
     return new_pop
 
 def all_populations_identical(population_dict):
@@ -92,40 +94,56 @@ def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = N
     counter = 0 #indicates termination of while loop
     fail_reason = ''
     last_pop = []
-    prob = [] #keeps probabilities of genomes
     pop_history = dict()
 
     while (counter < max_loops):
 
         muts = mutants(initial_pop, MU, 1) #create mutants of current genotypes in the population
         new_pop = initial_pop + muts #add mutants to current population
-        for i in range(len(new_pop)): #remove similar genotypes
-            new_pop[i] = tuple(new_pop[i])
-        new_pop = set(new_pop)   
-        new_pop = [list(ele) for ele in new_pop]
+        new_pop = list(set(tuple(genotype) for genotype in new_pop)) #remove similar genotypes
+        new_pop = [list(genotype) for genotype in new_pop]
 
         phenotypes = [] 
         for genome in new_pop: #create phenotypes from genotypes based on defined fitness function
             phenotypes.append(list(fitness_function(genome, Damp)))
-
         prob = eco.LexicaseFitness(phenotypes, epsilon) #calculate probablity of being selected by lexicase selection for all phenotypes
         P_survival = list((np.ones(len(prob)) - (np.ones(len(prob)) - prob)**S)**G) #calculate probability of survival based on equation(?) for all phenotypes
-        
+
+        for p in prob: 
+            assert 0 <= p <= 1, f"invalid probability value: prob= {prob}, phenotypes= {phenotypes}"
+            
         survivors = []
         for pheno in range(len(new_pop)): #find survivors based on probability of survival
             if (P_survival[pheno] >= p_thresh):
                 survivors.append(new_pop[pheno])
         
-        if (survivors == []): #define what happens if no individual survives, look at average probabilities instead of p_thresh
+        if (survivors == []): #define what happens if no individual survives
             print(" No survivors at seed ", Seed, "loop ", counter, "for mu = ", MU, "G = ", G, "S = ", S, "Dim = ", Dim)
-            for pheno in range(len(new_pop)): 
-                if (P_survival[pheno] >= np.mean(P_survival)):
+            #print(len(new_pop))
+            # for pheno in range(len(new_pop)): 
+            #     if (P_survival[pheno] >= np.mean(P_survival)):
+            #         survivors.append(new_pop[pheno])
+            # if (survivors == []):
+            #     for pheno in range(len(new_pop)):
+            #         if(math.isclose(P_survival[pheno],np.mean(P_survival))):
+            #             survivors.append(new_pop[pheno])
+            x = int(1/(1 - (1 - p_thresh**(1/G))**(1/S)))
+            sample = random.sample(new_pop, x)
+            phenotypes = [] 
+            for genome in sample: 
+                phenotypes.append(list(fitness_function(genome, Damp)))
+            prob = eco.LexicaseFitness(phenotypes, epsilon) 
+            P_survival = list((np.ones(len(prob)) - (np.ones(len(prob)) - prob)**S)**G) 
+            
+            for pheno in range(len(sample)): 
+                if (P_survival[pheno] >= p_thresh):
                     survivors.append(new_pop[pheno])
 
         for s in survivors:
         #Look for optimums in the population 
             if (s.count(4) == 1 and np.sum(s) == 4):
                 #print("Optimum found at loop", counter)
+                print("optimum found at loop ", counter)
                 terminate = True
 
         # if (counter == max_loops - 1): #Check if we're stuck at all-zeros
@@ -133,24 +151,27 @@ def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = N
         #         print("stuck at all zeros")
         #         terminate = True
 
-        if (counter > max_loops - 1000):
-            pop_history[counter] = survivors
+        # if (counter > max_loops - 1000):
+        #     pop_history[counter] = survivors
         
         if (terminate == True):
             break
 
         initial_pop = survivors #set current survivers as initial population of the next loop   
+        if (survivors == []):
+            print("no one is going to the next loop")
         counter = counter + 1
-    #print("survivors:", survivors)
-    if (counter == max_loops):
-        print("History checking...")
-        if all_populations_identical(pop_history):
-            fail_reason = 'stuck'
-        else:
-            fail_reason = 'searching'
-        last_pop = list(pop_history.values())[-1]
 
-    new_row = {'G': G, 'S':S, 'Dim':Dim, 'Damp':Damp, 'MU': MU, 'Seed': int(Seed), 'max_loops': max_loops, 'epsilon': epsilon, 'fail_loop':counter, 'fail_reason': fail_reason, 'last_pop': last_pop}
+    #if (counter == max_loops):
+        # print("History checking...")
+        # if all_populations_identical(pop_history):
+        #     fail_reason = 'stuck'
+        # else:
+        #     fail_reason = 'searching'
+        # last_pop = list(pop_history.values())[-1]
+    last_pop = survivors
+
+    new_row = {'G': G, 'S':S, 'Dim':Dim, 'Damp':Damp, 'MU': MU, 'Seed': int(Seed), 'max_loops': max_loops, 'epsilon': epsilon, 'fail_loop':counter, 'last_pop': last_pop}
     
     filename = rdir + f'/runid-{runid}.json'
     
@@ -180,21 +201,22 @@ from pqdm.processes import pqdm
 from tqdm import tqdm
 import itertools as it
 
-n_iters=30
-N_JOBS=64
+n_iters=1
+N_JOBS=8
 args=[]
 
 G = [500]
-S = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
-Dim = [5, 15, 25, 50]
+S = [500]
+Dim = [10]
 Damp = [1]
-MU = [0.01]
+MU = [0.1]
 seeds = np.random.randint(1,2**15,n_iters) 
 max_loops = [10000]
 p_thresh = [0.5]
-epsilon = [0]
+epsilon = [5]
 results=pd.DataFrame(columns = ['G', 'S', 'Dim', 'Damp', 'MU', 'Seed', 'max_loops', 'epsilon' 'fail_loop', 'fail_reason', 'last_pop'])
 
+# run the experiment
 # construct a list of arguments
 for g,s,dim,damp,mu,seed,epsilon,max_loops,p_thresh in it.product(G,S,Dim,Damp,MU,seeds,epsilon,max_loops,p_thresh):
     args.append(
@@ -209,8 +231,9 @@ for g,s,dim,damp,mu,seed,epsilon,max_loops,p_thresh in it.product(G,S,Dim,Damp,M
          'p_thresh': p_thresh
         }
     )
-# run the experiment
+
 print(len(args),'experiments')
+
 DEBUG=False
 import warnings
 with warnings.catch_warnings():

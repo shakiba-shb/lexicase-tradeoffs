@@ -14,12 +14,13 @@ seeds=$(cat seeds.txt | head -n $ntrials)
 mkdir -p $rdir
 
 G=(500)
-S=(100 200 300 400 500 600 700 800 900 1000)
-Dim=(5 15 25 50 75)
+S=(100 200 300)
+Dim=(5 15 25)
 Damp=(1)
 MU=(0.01)
+epsilon=(0)
 
-N=64
+N=128
 num_jobs="\j"  # The prompt escape for number of jobs currently running
 count=0
 for seed in ${seeds[@]} ; do
@@ -28,28 +29,31 @@ for seed in ${seeds[@]} ; do
             for dim in ${Dim[@]} ; do
                 for damp in ${Damp[@]} ; do
                     for mu in ${MU[@]} ; do
-                        while (( ${num_jobs@P} >= N )); do
-                            wait -n
+                        for eps in ${epsilon[@]} ; do
+                            while (( ${num_jobs@P} >= N )); do
+                                wait -n
+                            done
+                            ((++count))
+                            {
+                                job_name="G-${g}_S-${s}_Dim-${dim}_Damp-${damp}_MU-${mu}_Seed-${seed}_eps-${eps}" 
+                                job_file="${rdir}/${job_name}.log" 
+
+                                echo "job $count = ${job_name}..." 
+
+                                python single_lexicase_experiment.py \
+                                    -G ${g} \
+                                    -S ${s} \
+                                    -Dim ${dim} \
+                                    -Damp ${damp}\
+                                    -MU ${mu} \
+                                    -Seed ${seed} \
+                                    -epsilon ${eps} \
+                                    -rdir ${rdir} \
+                                    | tee -i ${job_file} >/dev/null
+
+                                echo "$count completed ${job_file}..." 
+                            } &
                         done
-                        ((++count))
-                        {
-                            job_name="Seed-${seed}_G-${g}_S-${s}_Dim-${dim}_Damp-${damp}_MU-${mu}" 
-                            job_file="${rdir}/${job_name}.log" 
-
-                            echo "job $count = ${job_name}..." 
-
-                            python single_lexicase_experiment.py \
-                                -G ${g} \
-                                -S ${s} \
-                                -Dim ${dim} \
-                                -Damp ${damp}\
-                                -MU ${mu} \
-                                -Seed ${seed} \
-                                -rdir ${rdir} \
-                                | tee -i ${job_file} >/dev/null
-
-                            echo "$count completed ${job_file}..." 
-                        } &
                     done
                 done
             done
