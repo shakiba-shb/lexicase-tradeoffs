@@ -21,13 +21,13 @@ parser.add_argument('-MU', action='store', type=str, dest='MUs', default='0.01',
 parser.add_argument('-epsilon', action='store', type=str, dest='eps', default='0,1,2,3.5,5',
                     help='epsilon')
 parser.add_argument('-max_loops', action='store', type=str, dest='loops', default='10000',
-                    help='maximum number of loops')    
-parser.add_argument('-rdir', action='store', default='results', type=str,
-                    help='Results directory')    
+                    help='maximum number of loops')       
 parser.add_argument('-Seed', action='store', type=str, dest='SEEDS',
 					default='14724,24284,31658,6933,1318,16695,27690,8233,24481,6832,'
 					'13352,4866,12669,12092,15860,19863,6654,10197,29756,14289,'
 					'4719,12498,29198,10132,28699,32400,18313,26311,9540,20300')
+parser.add_argument('-rdir', action='store', default='results', type=str,
+                    help='Results directory') 
 parser.add_argument('-n_trials', action='store', dest='N_TRIALS', default=20,
 					type=int, help='Number of trials to run')
 parser.add_argument('-n_jobs', action='store', default=1,
@@ -41,7 +41,7 @@ parser.add_argument('-time', action='store', dest='time',
 args = parser.parse_args()
 
 n_trials = len(args.SEEDS)
-seeds = args.SEEDS.split(',')[:n_trials]
+Seeds = args.SEEDS.split(',')[:n_trials]
 Gs = args.Gs.split(',')
 Ss = args.Ss.split(',')
 Dims = args.Dims.split(',')
@@ -53,31 +53,29 @@ fig = 'fig7'
 args.slurm = True
 
 print('running :', fig)
-print('using these seeds:', seeds)
-
-q = 'ECODE'
+print('using these seeds:', Seeds)
 
 # write run commands
 all_commands = []
 job_info = []
-# submit per each variable
-for g,s,dim,damp,mu,seed,epsilon,max_loops in it.product(Gs,Ss,Dims,Damps,MUs,seeds,eps,loops):
-	rdir = '/'.join([args.rdir, fig])+'/'
-	os.makedirs(rdir, exist_ok=True)
+rdir = '/'.join([args.rdir, fig])+'/stochastic results/'
+os.makedirs(rdir, exist_ok=True)
+
+for s,g,dim,damp,mu,seed,epsilon,max_loops in it.product(Ss,Gs,Dims,Damps,MUs,Seeds,eps,loops):
 
 	all_commands.append(
-		f'python3 single_lexicase_experiment.py -S {int(s)} -G {int(g)} -Dim {int(dim)} -Damp {int(damp)} -MU {float(mu)} -Seed {seed} -epsilon {float(epsilon)} -max_loops {int(max_loops)} -rdir {rdir}'
+		f'python3 single_lexicase_experiment.py -S {int(s)} -G {int(g)} -Dim {int(dim)} -Damp {int(damp)} -MU {float(mu)} -epsilon {float(epsilon)} -max_loops {int(max_loops)} -Seed {seed} -rdir {rdir}'
 	)
 
 	job_info.append({
-         'G':g,
          'S':s,
+         'G':g,
          'Dim':dim,
          'Damp':damp,
-         'MU': mu, 
-         'Seed': seed, 
+         'MU': mu,  
          'epsilon': epsilon, 
          'max_loops': max_loops,
+		 'Seed': seed,
 		 'rdir': rdir
         
 	})
@@ -86,24 +84,23 @@ print(len(job_info), 'total jobs created')
 if args.slurm:
 	# write a jobarray file to read commans from
 	jobarrayfile = 'jobfiles/joblist.txt'
-	os.makedirs('jobfiles', exist_ok=True)
+	os.makedirs(rdir + 'jobfiles', exist_ok=True)
 	for i, run_cmd in enumerate(all_commands):
 
 		job_name = '_'.join([x + '-' + f'{job_info[i][x]}' for x in
-							['S','G','Dim', 'Damp', 'MU', 'Seed', 'epsilon']])
-		job_file = f'jobfiles/{job_name}.sbatch'
+							['S','G','Dim', 'Damp', 'MU', 'epsilon', 'Seed']])
+		job_file = f'{rdir}/jobfiles/{job_name}.sb'
 		out_file = job_info[i]['rdir'] + job_name + '_%J.out'
 
 		batch_script = (
 			f"""#!/usr/bin/bash 
+#SBATCH -A ecode
 #SBATCH --output={out_file} 
 #SBATCH --job-name={job_name} 
-#SBATCH --partition={q} 
 #SBATCH --ntasks={1} 
 #SBATCH --cpus-per-task={1} 
 #SBATCH --time={args.time}
-#SBATCH --mem={args.mem} 
-#SBATCH --nodelist=rdt01694
+#SBATCH --mem={args.mem}
 
 date
 module purge
@@ -120,6 +117,6 @@ date
 			f.write(batch_script)
 
 		print(run_cmd)
-		sbatch_response = subprocess.check_output(
-			[f'sbatch {job_file}'], shell=True).decode()     # submit jobs
-		print(sbatch_response)
+		# sbatch_response = subprocess.check_output(
+		# 	[f'sbatch {job_file}'], shell=True).decode()     # submit jobs
+		# print(sbatch_response)

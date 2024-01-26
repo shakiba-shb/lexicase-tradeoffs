@@ -85,16 +85,16 @@ def all_populations_identical(population_dict):
     # If all populations are identical
     return True
 
-def experiment (S = None, G = None, Dim = None, Damp = None, MU = None, Seed = None, epsilon = None, max_loops = None , rdir = "" ):
+def experiment (S = None, G = None, Dim = None, Damp = None, MU = None, epsilon = None, max_loops = None , Seed = None, rdir = "" ):
 
     runid = uuid.uuid4()
-    print("G = ", G, "S = ", S, "Dim = ", Dim, 'Damp = ', Damp, 'MU = ', MU, 'Seed = ', Seed, 'max_loops =', max_loops, 'epsilon =', epsilon)
+    print("S =", S, "G =", G, "Dim =", Dim, 'Damp =', Damp, 'MU =', MU, 'max_loops =', max_loops, 'epsilon =', epsilon, 'Seed =', Seed,)
     terminate = False
     initial_pop = [[0 for i in range (Dim)]] #initial population
     counter = 0 #indicates termination of while loop
-    fail_reason = ''
+    #fail_reason = ''
     last_pop = []
-    pop_history = dict()
+    #pop_history = dict()
     p_thresh = 0.5
 
     while (counter < max_loops):
@@ -172,7 +172,7 @@ def experiment (S = None, G = None, Dim = None, Damp = None, MU = None, Seed = N
         # last_pop = list(pop_history.values())[-1]
     last_pop = survivors
 
-    new_row = {'G': G, 'S':S, 'Dim':Dim, 'Damp':Damp, 'MU': MU, 'Seed': int(Seed), 'max_loops': max_loops, 'epsilon': epsilon, 'fail_loop':counter, 'last_pop': last_pop}
+    new_row = {'S': S, 'G':G, 'Dim':Dim, 'Damp':Damp, 'MU': MU, 'max_loops': max_loops, 'epsilon': epsilon, 'Seed': int(Seed), 'fail_loop':counter, 'last_pop': last_pop}
     
     filename = rdir + f'/runid-{runid}.json'
     
@@ -200,15 +200,15 @@ if __name__ == '__main__':
     parser.add_argument('-Damp', action='store', type=int, default=1,
                         help='Dampening factor')
     parser.add_argument('-MU', action='store', type=float, default=0.01,
-                        help='mutation rate')
-    parser.add_argument('-Seed', action='store', type=int, default=42,
-                        help='seed')                    
+                        help='mutation rate')                  
     parser.add_argument('-epsilon', action='store', type=float, default=0,
                         help='epsilon')
     parser.add_argument('-max_loops', action='store', type=int, default=1000,
-                        help='maximum number of loops')    
-    parser.add_argument('-rdir', action='store', default='results', type=str,
+                        help='maximum number of loops') 
+    parser.add_argument('-Seed', action='store', type=int, default=42,
+                    help='seed')     
+    parser.add_argument('-rdir', action='store', default='results/fig7/stochastic results/', type=str,
                         help='Name of save file')                                   
     
     args = parser.parse_args()
-    experiment( args.S, args.G, args.Dim, args.Damp, args.MU, args.Seed, args.epsilon, args.max_loops, args.rdir )
+    experiment( args.S, args.G, args.Dim, args.Damp, args.MU, args.epsilon, args.max_loops, args.Seed, args.rdir )
