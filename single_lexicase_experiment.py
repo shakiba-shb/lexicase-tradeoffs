@@ -109,13 +109,16 @@ def experiment (S = None, G = None, Dim = None, Damp = None, MU = None, epsilon 
             phenotypes.append(list(fitness_function(genome, Damp)))
 
         phenotypes = np.array(phenotypes)
+        new_phenotypes = np.zeros(phenotypes.shape)
         for i in range(len(phenotypes[0])):
             et = phenotypes[:,i]
-            epsilon = np.median(np.abs(et - np.median(et)))
-            if epsilon > 1:
-                phenotypes[:, i] = phenotypes[:, i] / epsilon
+            eps = np.median(np.abs(et - np.median(et)))
+            if eps > 1:
+                new_phenotypes[:, i] = phenotypes[:, i] /eps
+            elif eps == 1:
+                new_phenotypes[:, i] = phenotypes[:, i]
             else:
-                phenotypes[:, i] = phenotypes[:, i] * 2
+                new_phenotypes[:, i] = phenotypes[:, i] * 2
 
         prob = eco.LexicaseFitness(phenotypes, epsilon = 1) #calculate probablity of being selected by lexicase selection for all phenotypes
         P_survival = list((np.ones(len(prob)) - (np.ones(len(prob)) - prob)**S)**G) #calculate probability of survival based on equation(?) for all phenotypes
@@ -143,7 +146,20 @@ def experiment (S = None, G = None, Dim = None, Damp = None, MU = None, epsilon 
             phenotypes = [] 
             for genome in sample: 
                 phenotypes.append(list(fitness_function(genome, Damp)))
-            prob = eco.LexicaseFitness(phenotypes, epsilon) 
+
+            phenotypes = np.array(phenotypes)
+            new_phenotypes = np.zeros(phenotypes.shape)
+            for i in range(len(phenotypes[0])):
+                et = phenotypes[:,i]
+                eps = np.median(np.abs(et - np.median(et)))
+                if eps > 1:
+                    new_phenotypes[:, i] = phenotypes[:, i] /eps
+                elif eps == 1:
+                    new_phenotypes[:, i] = phenotypes[:, i]
+                else:
+                    new_phenotypes[:, i] = phenotypes[:, i] * 2
+                    
+            prob = eco.LexicaseFitness(new_phenotypes, epsilon) 
             P_survival = list((np.ones(len(prob)) - (np.ones(len(prob)) - prob)**S)**G) 
             
             for pheno in range(len(sample)): 
