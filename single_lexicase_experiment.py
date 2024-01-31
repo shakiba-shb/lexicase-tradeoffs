@@ -107,7 +107,17 @@ def experiment (S = None, G = None, Dim = None, Damp = None, MU = None, epsilon 
         phenotypes = [] 
         for genome in new_pop: #create phenotypes from genotypes based on defined fitness function
             phenotypes.append(list(fitness_function(genome, Damp)))
-        prob = eco.LexicaseFitness(phenotypes, epsilon) #calculate probablity of being selected by lexicase selection for all phenotypes
+
+        phenotypes = np.array(phenotypes)
+        for i in range(len(phenotypes[0])):
+            et = phenotypes[:,i]
+            epsilon = np.median(np.abs(et - np.median(et)))
+            if epsilon > 1:
+                phenotypes[:, i] = phenotypes[:, i] / epsilon
+            else:
+                phenotypes[:, i] = phenotypes[:, i] * 2
+
+        prob = eco.LexicaseFitness(phenotypes, epsilon = 1) #calculate probablity of being selected by lexicase selection for all phenotypes
         P_survival = list((np.ones(len(prob)) - (np.ones(len(prob)) - prob)**S)**G) #calculate probability of survival based on equation(?) for all phenotypes
 
         for p in prob: 
@@ -207,7 +217,7 @@ if __name__ == '__main__':
                         help='maximum number of loops') 
     parser.add_argument('-Seed', action='store', type=int, default=42,
                     help='seed')     
-    parser.add_argument('-rdir', action='store', default='results/fig7/stochastic results/', type=str,
+    parser.add_argument('-rdir', action='store', default='results/fig7/stochastic/json', type=str,
                         help='Name of save file')                                   
     
     args = parser.parse_args()

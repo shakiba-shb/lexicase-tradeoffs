@@ -106,7 +106,18 @@ def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = N
         phenotypes = [] 
         for genome in new_pop: #create phenotypes from genotypes based on defined fitness function
             phenotypes.append(list(fitness_function(genome, Damp)))
-        prob = eco.LexicaseFitness(phenotypes, epsilon) #calculate probablity of being selected by lexicase selection for all phenotypes
+              
+        phenotypes = np.array(phenotypes)
+        for i in range(len(phenotypes[0])):
+            et = phenotypes[:,i]
+            epsilon = np.median(np.abs(et - np.median(et)))
+            if epsilon > 1:
+                phenotypes[:, i] = phenotypes[:, i] / epsilon
+            else:
+                phenotypes[:, i] = phenotypes[:, i] * 2
+
+        prob = eco.LexicaseFitness(phenotypes, epsilon=1)
+        #prob = eco.LexicaseFitness(phenotypes, epsilon) #calculate probablity of being selected by lexicase selection for all phenotypes
         P_survival = list((np.ones(len(prob)) - (np.ones(len(prob)) - prob)**S)**G) #calculate probability of survival based on equation(?) for all phenotypes
 
         for p in prob: 
@@ -206,8 +217,8 @@ N_JOBS=8
 args=[]
 
 G = [500]
-S = [500]
-Dim = [10]
+S = [100, 200, 300]
+Dim = [5, 10]
 Damp = [1]
 MU = [0.1]
 seeds = np.random.randint(1,2**15,n_iters) 
