@@ -20,6 +20,8 @@ parser.add_argument('-MU', action='store', type=str, dest='MUs', default='0.01',
                     help='mutation rate')               
 parser.add_argument('-epsilon', action='store', type=str, dest='eps', default='0,1,2,3.5,5',
                     help='epsilon')
+parser.add_argument('-epsilon_type', action='store', type=str, dest='ep_types', default='0,1,2,3,4,5',
+                    help='epsilon_type')
 parser.add_argument('-max_loops', action='store', type=str, dest='loops', default='10000',
                     help='maximum number of loops')       
 parser.add_argument('-Seed', action='store', type=str, dest='SEEDS',
@@ -48,23 +50,20 @@ Dims = args.Dims.split(',')
 Damps = args.Damps.split(',')
 MUs = args.MUs.split(',')
 eps = args.eps.split(',')
+ep_types = args.ep_types.split(',')
 loops = args.loops.split(',')
-fig = 'fig7'
 args.slurm = True
-
-print('running :', fig)
-print('using these seeds:', Seeds)
 
 # write run commands
 all_commands = []
 job_info = []
-rdir = '/'.join([args.rdir, fig])+'/stochastic results/'
+rdir = '/'.join([args.rdir])+'/stochastic results/'
 os.makedirs(rdir, exist_ok=True)
 
-for s,g,dim,damp,mu,seed,epsilon,max_loops in it.product(Ss,Gs,Dims,Damps,MUs,Seeds,eps,loops):
+for s,g,dim,damp,mu,seed,epsilon,epsilon_type,max_loops in it.product(Ss,Gs,Dims,Damps,MUs,Seeds,eps,ep_types,loops):
 
 	all_commands.append(
-		f'python3 single_lexicase_experiment.py -S {int(s)} -G {int(g)} -Dim {int(dim)} -Damp {int(damp)} -MU {float(mu)} -epsilon {float(epsilon)} -max_loops {int(max_loops)} -Seed {seed} -rdir {rdir}'
+		f'python3 single_lexicase_experiment.py -S {int(s)} -G {int(g)} -Dim {int(dim)} -Damp {int(damp)} -MU {float(mu)} -epsilon {float(epsilon)} -epsilon_type {int(epsilon_type)} -max_loops {int(max_loops)} -Seed {seed} -rdir {rdir}'
 	)
 
 	job_info.append({
@@ -74,6 +73,7 @@ for s,g,dim,damp,mu,seed,epsilon,max_loops in it.product(Ss,Gs,Dims,Damps,MUs,Se
          'Damp':damp,
          'MU': mu,  
          'epsilon': epsilon, 
+		 'epsilon_type': epsilon_type,
          'max_loops': max_loops,
 		 'Seed': seed,
 		 'rdir': rdir
@@ -88,7 +88,7 @@ if args.slurm:
 	for i, run_cmd in enumerate(all_commands):
 
 		job_name = '_'.join([x + '-' + f'{job_info[i][x]}' for x in
-							['S','G','Dim', 'Damp', 'MU', 'epsilon', 'Seed']])
+							['S','G','Dim', 'Damp', 'MU', 'epsilon', 'epsilon_type', 'Seed']])
 		job_file = f'{rdir}/jobfiles/{job_name}.sb'
 		out_file = job_info[i]['rdir'] + job_name + '_%J.out'
 
