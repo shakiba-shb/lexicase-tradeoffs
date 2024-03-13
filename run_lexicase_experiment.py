@@ -204,10 +204,10 @@ def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = N
     last_pop = survivors
     new_row = {'G': G, 'S':S, 'Dim':Dim, 'Damp':Damp, 'MU': MU, 'Seed': int(Seed), 'max_loops': max_loops,
                 'epsilon': epsilon, 'epsilon_type': epsilon_type, 'fail_loop':counter, 'last_pop': last_pop}
-    #filename = rdir + f'/runid-{runid}.json'
-    filename = rdir + f'/S-dim-G-{G}-damp-{damp}-mu-{MU}-epsilon-{epsilon}-epsilon_type-{epsilon_type}-max_loops-{max_loops}.json'
-    with open(filename, 'a') as of:
-        of.write(json.dumps(new_row) + '\n')
+
+    filename = rdir + f'/runid-{runid}.json'
+    with open(filename, 'w') as of:
+        json.dump(new_row, of)
 
     return new_row
 
