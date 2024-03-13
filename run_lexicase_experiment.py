@@ -3,8 +3,6 @@ import numpy as np
 import random
 import time
 import matplotlib.pyplot as plt
-import scipy.stats as st
-from scipy.stats import bootstrap
 import pandas as pd
 import seaborn as sns
 import uuid
@@ -85,16 +83,15 @@ def all_populations_identical(population_dict):
     # If all populations are identical
     return True
 
-def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = None, epsilon = None, max_loops = None , p_thresh = None ):
+def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = None, epsilon = None, epsilon_type = None, max_loops = None):
 
     runid = uuid.uuid4()
     print("G = ", G, "S = ", S, "Dim = ", Dim, 'Damp = ', Damp, 'MU = ', MU, 'Seed = ', Seed, 'max_loops =', max_loops, 'epsilon =', epsilon)
     terminate = False
     initial_pop = [[0 for i in range (Dim)]] #initial population
     counter = 0 #indicates termination of while loop
-    fail_reason = ''
     last_pop = []
-    pop_history = dict()
+    p_thresh = 0.5
 
     while (counter < max_loops):
 
@@ -108,23 +105,37 @@ def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = N
             phenotypes.append(list(fitness_function(genome, Damp)))
               
         phenotypes = np.array(phenotypes)
-        new_phenotypes = np.zeros(phenotypes.shape)
-        for i in range(len(phenotypes[0])):
-            et = phenotypes[:,i]
-            eps = np.median(np.abs(et - np.median(et)))
-            if eps > 1:
-                new_phenotypes[:, i] = phenotypes[:, i] /eps
-            elif eps == 1:
-                new_phenotypes[:, i] = phenotypes[:, i]
-            else:
-                new_phenotypes[:, i] = phenotypes[:, i] * 2
+        # new_phenotypes = np.zeros(phenotypes.shape)
+        # for i in range(len(phenotypes[0])):
+        #     et = phenotypes[:,i]
+        #     eps = np.median(np.abs(et - np.median(et)))
+        #     if eps > 1:
+        #         new_phenotypes[:, i] = phenotypes[:, i] /eps
+        #     elif eps == 1:
+        #         new_phenotypes[:, i] = phenotypes[:, i]
+        #     else:
+        #         new_phenotypes[:, i] = phenotypes[:, i] * 2
 
-        prob = eco.LexicaseFitness(new_phenotypes, epsilon=1)
+
         #prob = eco.LexicaseFitness(phenotypes, epsilon) #calculate probablity of being selected by lexicase selection for all phenotypes
+        match epsilon_type:
+            case  0:
+                prob = eco.LexicaseFitness(phenotypes, epsilon=0, epsilon_type=epsilon_type)
+            case  1:
+                prob = eco.LexicaseFitness(phenotypes, epsilon=epsilon, epsilon_type=epsilon_type)
+            case  2:
+                pass
+            case  3:
+                prob = eco.LexicaseFitness(phenotypes, epsilon_type=epsilon_type)
+            case  4:
+                prob = eco.LexicaseFitness(phenotypes, epsilon_type=epsilon_type)
+            case 5:
+                pass
+
         P_survival = list((np.ones(len(prob)) - (np.ones(len(prob)) - prob)**S)**G) #calculate probability of survival based on equation(?) for all phenotypes
 
         for p in prob: 
-            assert 0 <= p <= 1, f"invalid probability value: prob= {prob}, phenotypes= {phenotypes}"
+            assert 0 <= p <= 1.0000000000000002, f"invalid probability value: prob= {prob}, phenotypes= {phenotypes}"
             
         survivors = []
         for pheno in range(len(new_pop)): #find survivors based on probability of survival
@@ -132,7 +143,8 @@ def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = N
                 survivors.append(new_pop[pheno])
         
         if (survivors == []): #define what happens if no individual survives
-            print(" No survivors at seed ", Seed, "loop ", counter, "for mu = ", MU, "G = ", G, "S = ", S, "Dim = ", Dim)
+            print(" No survivors at seed ", Seed, "loop ", counter, "for mu ", MU, "G ", G, "S ", S, "Dim ", Dim, 
+                  'epsilon ', epsilon, 'epsilon_type ', epsilon_type)
             #print(len(new_pop))
             # for pheno in range(len(new_pop)): 
             #     if (P_survival[pheno] >= np.mean(P_survival)):
@@ -149,17 +161,21 @@ def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = N
 
             phenotypes = np.array(phenotypes)
             new_phenotypes = np.zeros(phenotypes.shape)
-            for i in range(len(phenotypes[0])):
-                et = phenotypes[:,i]
-                eps = np.median(np.abs(et - np.median(et)))
-                if eps > 1:
-                    new_phenotypes[:, i] = phenotypes[:, i] /eps
-                elif eps == 1:
-                    new_phenotypes[:, i] = phenotypes[:, i]
-                else:
-                    new_phenotypes[:, i] = phenotypes[:, i] * 2
-                    
-            prob = eco.LexicaseFitness(new_phenotypes, epsilon) 
+
+            match epsilon_type:
+                case  0:
+                    prob = eco.LexicaseFitness(new_phenotypes, epsilon=0, epsilon_type=epsilon_type)
+                case  1:
+                    prob = eco.LexicaseFitness(new_phenotypes, epsilon=epsilon, epsilon_type=epsilon_type)
+                case  2:
+                    pass
+                case  3:
+                    prob = eco.LexicaseFitness(new_phenotypes, epsilon_type=epsilon_type)
+                case  4:
+                    prob = eco.LexicaseFitness(new_phenotypes, epsilon_type=epsilon_type)
+                case 5:
+                    pass
+
             P_survival = list((np.ones(len(prob)) - (np.ones(len(prob)) - prob)**S)**G) 
             
             for pheno in range(len(sample)): 
@@ -177,34 +193,22 @@ def experiment (G = None, S = None, Dim = None, Damp = None, MU = None, Seed = N
         #     if((len(survivors) == 1) and (not np.any(survivors[0]))):
         #         print("stuck at all zeros")
         #         terminate = True
-
-        # if (counter > max_loops - 1000):
-        #     pop_history[counter] = survivors
         
         if (terminate == True):
             break
 
         initial_pop = survivors #set current survivers as initial population of the next loop   
-        if (survivors == []):
-            print("no one is going to the next loop")
+        assert len(survivors)>0, f"no one survives to the next loop" 
         counter = counter + 1
 
-    #if (counter == max_loops):
-        # print("History checking...")
-        # if all_populations_identical(pop_history):
-        #     fail_reason = 'stuck'
-        # else:
-        #     fail_reason = 'searching'
-        # last_pop = list(pop_history.values())[-1]
     last_pop = survivors
+    new_row = {'G': G, 'S':S, 'Dim':Dim, 'Damp':Damp, 'MU': MU, 'Seed': int(Seed), 'max_loops': max_loops,
+                'epsilon': epsilon, 'epsilon_type': epsilon_type, 'fail_loop':counter, 'last_pop': last_pop}
+    #filename = rdir + f'/runid-{runid}.json'
+    filename = rdir + f'/S-dim-G-{G}-damp-{damp}-mu-{MU}-epsilon-{epsilon}-epsilon_type-{epsilon_type}-max_loops-{max_loops}.json'
+    with open(filename, 'a') as of:
+        of.write(json.dumps(new_row) + '\n')
 
-    new_row = {'G': G, 'S':S, 'Dim':Dim, 'Damp':Damp, 'MU': MU, 'Seed': int(Seed), 'max_loops': max_loops, 'epsilon': epsilon, 'fail_loop':counter, 'last_pop': last_pop}
-    
-    filename = rdir + f'/runid-{runid}.json'
-    
-    with open(filename, 'w') as of:
-        json.dump(new_row, of)
-    
     return new_row
 
 
@@ -239,13 +243,13 @@ Damp = [1]
 MU = [0.1]
 seeds = np.random.randint(1,2**15,n_iters) 
 max_loops = [10000]
-p_thresh = [0.5]
-epsilon = [5]
+epsilons = [1,2] #must be [None] or have a value depending on epsilon_type
+epsilon_types = [1]
 results=pd.DataFrame(columns = ['G', 'S', 'Dim', 'Damp', 'MU', 'Seed', 'max_loops', 'epsilon' 'fail_loop', 'fail_reason', 'last_pop'])
 
 # run the experiment
 # construct a list of arguments
-for g,s,dim,damp,mu,seed,epsilon,max_loops,p_thresh in it.product(G,S,Dim,Damp,MU,seeds,epsilon,max_loops,p_thresh):
+for g,s,dim,damp,mu,seed,epsilon,epsilon_type,max_loops in it.product(G,S,Dim,Damp,MU,seeds,epsilons,epsilon_types,max_loops):
     args.append(
         {'G':g,
          'S':s,
@@ -254,8 +258,8 @@ for g,s,dim,damp,mu,seed,epsilon,max_loops,p_thresh in it.product(G,S,Dim,Damp,M
          'MU': mu, 
          'Seed': seed, 
          'epsilon': epsilon, 
+         'epsilon_type': epsilon_type,
          'max_loops': max_loops, 
-         'p_thresh': p_thresh
         }
     )
 

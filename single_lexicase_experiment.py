@@ -3,8 +3,6 @@ import numpy as np
 import random
 import time
 import matplotlib.pyplot as plt
-import scipy.stats as st
-from scipy.stats import bootstrap
 import pandas as pd
 import seaborn as sns
 import uuid
@@ -85,16 +83,15 @@ def all_populations_identical(population_dict):
     # If all populations are identical
     return True
 
-def experiment (S = None, G = None, Dim = None, Damp = None, MU = None, epsilon = None, max_loops = None , Seed = None, rdir = "" ):
+def experiment (S = None, G = None, Dim = None, Damp = None, MU = None, epsilon = None, epsilon_type = None, max_loops = None , Seed = None, rdir = "" ):
 
     runid = uuid.uuid4()
-    print("S =", S, "G =", G, "Dim =", Dim, 'Damp =', Damp, 'MU =', MU, 'max_loops =', max_loops, 'epsilon =', epsilon, 'Seed =', Seed,)
+    print("S =", S, "G =", G, "Dim =", Dim, 'Damp =', Damp, 'MU =', MU, 'max_loops =', max_loops, 
+          'epsilon =', epsilon, 'epsilon_type = ', epsilon_type, 'Seed =', Seed,)
     terminate = False
     initial_pop = [[0 for i in range (Dim)]] #initial population
     counter = 0 #indicates termination of while loop
-    #fail_reason = ''
     last_pop = []
-    #pop_history = dict()
     p_thresh = 0.5
 
     while (counter < max_loops):
@@ -109,22 +106,36 @@ def experiment (S = None, G = None, Dim = None, Damp = None, MU = None, epsilon 
             phenotypes.append(list(fitness_function(genome, Damp)))
 
         phenotypes = np.array(phenotypes)
-        new_phenotypes = np.zeros(phenotypes.shape)
-        for i in range(len(phenotypes[0])):
-            et = phenotypes[:,i]
-            eps = np.median(np.abs(et - np.median(et)))
-            if eps > 1:
-                new_phenotypes[:, i] = phenotypes[:, i] /eps
-            elif eps == 1:
-                new_phenotypes[:, i] = phenotypes[:, i]
-            else:
-                new_phenotypes[:, i] = phenotypes[:, i] * 2
+        #new_phenotypes = np.zeros(phenotypes.shape)
+        # for i in range(len(phenotypes[0])):
+        #     et = phenotypes[:,i]
+        #     eps = np.median(np.abs(et - np.median(et)))
+        #     if eps > 1:
+        #         new_phenotypes[:, i] = phenotypes[:, i] /eps
+        #     elif eps == 1:
+        #         new_phenotypes[:, i] = phenotypes[:, i]
+        #     else:
+        #         new_phenotypes[:, i] = phenotypes[:, i] * 2
 
-        prob = eco.LexicaseFitness(phenotypes, epsilon = 1) #calculate probablity of being selected by lexicase selection for all phenotypes
+        #prob = eco.LexicaseFitness(phenotypes, epsilon = 1) #calculate probablity of being selected by lexicase selection for all phenotypes
+        match epsilon_type:
+            case  0:
+                prob = eco.LexicaseFitness(phenotypes, epsilon=0, epsilon_type=epsilon_type)
+            case  1:
+                prob = eco.LexicaseFitness(phenotypes, epsilon=epsilon, epsilon_type=epsilon_type)
+            case  2:
+                pass
+            case  3:
+                prob = eco.LexicaseFitness(phenotypes, epsilon_type=epsilon_type)
+            case  4:
+                prob = eco.LexicaseFitness(phenotypes, epsilon_type=epsilon_type)
+            case 5:
+                pass
+        
         P_survival = list((np.ones(len(prob)) - (np.ones(len(prob)) - prob)**S)**G) #calculate probability of survival based on equation(?) for all phenotypes
 
         for p in prob: 
-            assert 0 <= p <= 1, f"invalid probability value: prob= {prob}, phenotypes= {phenotypes}"
+            assert 0 <= p <= 1.0000000000000002, f"invalid probability value: prob= {prob}, phenotypes= {phenotypes}"
             
         survivors = []
         for pheno in range(len(new_pop)): #find survivors based on probability of survival
@@ -132,7 +143,8 @@ def experiment (S = None, G = None, Dim = None, Damp = None, MU = None, epsilon 
                 survivors.append(new_pop[pheno])
         
         if (survivors == []): #define what happens if no individual survives
-            print(" No survivors at seed ", Seed, "loop ", counter, "for mu = ", MU, "G = ", G, "S = ", S, "Dim = ", Dim)
+            print(" No survivors at seed ", Seed, "loop ", counter, "for mu ", MU, "G ", G, "S ", S, "Dim ", Dim, 
+                  'epsilon ', epsilon, 'epsilon_type ', epsilon_type)            
             #print(len(new_pop))
             # for pheno in range(len(new_pop)): 
             #     if (P_survival[pheno] >= np.mean(P_survival)):
@@ -149,17 +161,29 @@ def experiment (S = None, G = None, Dim = None, Damp = None, MU = None, epsilon 
 
             phenotypes = np.array(phenotypes)
             new_phenotypes = np.zeros(phenotypes.shape)
-            for i in range(len(phenotypes[0])):
-                et = phenotypes[:,i]
-                eps = np.median(np.abs(et - np.median(et)))
-                if eps > 1:
-                    new_phenotypes[:, i] = phenotypes[:, i] /eps
-                elif eps == 1:
-                    new_phenotypes[:, i] = phenotypes[:, i]
-                else:
-                    new_phenotypes[:, i] = phenotypes[:, i] * 2
-                    
-            prob = eco.LexicaseFitness(new_phenotypes, epsilon) 
+            # for i in range(len(phenotypes[0])):
+            #     et = phenotypes[:,i]
+            #     eps = np.median(np.abs(et - np.median(et)))
+            #     if eps > 1:
+            #         new_phenotypes[:, i] = phenotypes[:, i] /eps
+            #     elif eps == 1:
+            #         new_phenotypes[:, i] = phenotypes[:, i]
+            #     else:
+            #         new_phenotypes[:, i] = phenotypes[:, i] * 2
+            match epsilon_type:
+                case  0:
+                    prob = eco.LexicaseFitness(new_phenotypes, epsilon=0, epsilon_type=epsilon_type)
+                case  1:
+                    prob = eco.LexicaseFitness(new_phenotypes, epsilon=epsilon, epsilon_type=epsilon_type)
+                case  2:
+                    pass
+                case  3:
+                    prob = eco.LexicaseFitness(new_phenotypes, epsilon_type=epsilon_type)
+                case  4:
+                    prob = eco.LexicaseFitness(new_phenotypes, epsilon_type=epsilon_type)
+                case 5:
+                    pass
+
             P_survival = list((np.ones(len(prob)) - (np.ones(len(prob)) - prob)**S)**G) 
             
             for pheno in range(len(sample)): 
@@ -177,33 +201,21 @@ def experiment (S = None, G = None, Dim = None, Damp = None, MU = None, epsilon 
         #     if((len(survivors) == 1) and (not np.any(survivors[0]))):
         #         print("stuck at all zeros")
         #         terminate = True
-
-        # if (counter > max_loops - 1000):
-        #     pop_history[counter] = survivors
         
         if (terminate == True):
             break
 
         initial_pop = survivors #set current survivers as initial population of the next loop   
-        if (survivors == []):
-            print("no one is going to the next loop")
+        assert len(survivors)>0, f"no one survives to the next loop"
         counter = counter + 1
 
-    #if (counter == max_loops):
-        # print("History checking...")
-        # if all_populations_identical(pop_history):
-        #     fail_reason = 'stuck'
-        # else:
-        #     fail_reason = 'searching'
-        # last_pop = list(pop_history.values())[-1]
     last_pop = survivors
-
-    new_row = {'S': S, 'G':G, 'Dim':Dim, 'Damp':Damp, 'MU': MU, 'max_loops': max_loops, 'epsilon': epsilon, 'Seed': int(Seed), 'fail_loop':counter, 'last_pop': last_pop}
-    
-    filename = rdir + f'/runid-{runid}.json'
-    
-    with open(filename, 'w') as of:
-        json.dump(new_row, of)
+    new_row = {'G': G, 'S':S, 'Dim':Dim, 'Damp':Damp, 'MU': MU, 'Seed': int(Seed), 'max_loops': max_loops,
+                'epsilon': epsilon, 'epsilon_type': epsilon_type, 'fail_loop':counter, 'last_pop': last_pop}
+        
+    filename = rdir + f'/S-dim-G-{G}-damp-{Damp}-mu-{MU}-epsilon-{epsilon}-epsilon_type-{epsilon_type}-max_loops-{max_loops}.json'
+    with open(filename, 'a') as of:
+        of.write(json.dumps(new_row) + '\n')
     
     return new_row
 
@@ -229,12 +241,14 @@ if __name__ == '__main__':
                         help='mutation rate')                  
     parser.add_argument('-epsilon', action='store', type=float, default=0,
                         help='epsilon')
-    parser.add_argument('-max_loops', action='store', type=int, default=1000,
+    parser.add_argument('-epsilon_type', action='store', type=float, default=0,
+                        help='Type of epsilon to use. 0: traditional, 1: semi dynamic with constant epsilon, 2: static with constant epsilon, 3: semi dynamic with automated epsilon, 4: dynamic, 5: static with automated epsilon')
+    parser.add_argument('-max_loops', action='store', type=int, default=10000,
                         help='maximum number of loops') 
     parser.add_argument('-Seed', action='store', type=int, default=42,
                     help='seed')     
-    parser.add_argument('-rdir', action='store', default='results/fig7/stochastic/json', type=str,
-                        help='Name of save file')                                   
+    parser.add_argument('-rdir', action='store', default='results/', type=str,
+                        help='save results to this directory')                                   
     
     args = parser.parse_args()
-    experiment( args.S, args.G, args.Dim, args.Damp, args.MU, args.epsilon, args.max_loops, args.Seed, args.rdir )
+    experiment( args.S, args.G, args.Dim, args.Damp, args.MU, args.epsilon, args.epsilon_type, args.max_loops, args.Seed, args.rdir )
